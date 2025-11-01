@@ -1,6 +1,5 @@
 from fastapi import FastAPI
-
-from .routers import dispatches
+from .routers import dispatches, folders
 
 app = FastAPI(
     title="HPC Dispatch Management Service",
@@ -9,6 +8,7 @@ app = FastAPI(
 )
 
 app.include_router(dispatches.router)
+app.include_router(folders.router)
 
 
 @app.get("/", tags=["Health Check"])
