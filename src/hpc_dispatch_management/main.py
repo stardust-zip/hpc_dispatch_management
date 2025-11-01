@@ -1,6 +1,7 @@
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status
 from typing import Annotated
+from .routers import dispatches
 
 app = FastAPI(
     title="HPC Dispatch Management Service",
@@ -8,16 +9,23 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(dispatches.router)
+
+
 @app.get("/", tags=["Health Check"])
 async def read_root():
     """
     Root endpoint for health check.
+    Even if your health already sucked 😔.
     """
-    return {"status": "ok", "service": "HPC Dispatch Management"}
+    return {
+        "status": "ok",
+        "service": "HPC Dispatch Management",
+        "mind": "controlled",
+        "life": "failed",
+        "solulu": "delulu",
+        "faith": False,
+    }
 
 
-
-# Uvicorn runner for local development
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8888)
-
+# uvicorn --app-dir src hpc_dispatch_management.main:app --host 0.0.0.0 --port 8888 --reload

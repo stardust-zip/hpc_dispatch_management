@@ -72,10 +72,12 @@ port: `http://localhost:8080/api/v1/events/publish`
 - *Only* Lecturer or Admin can access dispatch.
 
 ### Dispatch Service's Features
-- Since our service doesn't create **actual** dispatch, user shall use word or other application to create dispatch, The actual thing we manage in our service is **Dispatch Sending Form**
-#### Lecturer
-##### Manage **Dispatch Sending Form**
-- CRUD Dispatch Sending Form
-  -
+- CRUD Dispatch
+  - if dispatch is in draft, creator can edit or delete it
+  - when dispatch was sent, it no longer in draft, only admin can delete or edit it
+- Folder for dispatches
+- Sending Dispatch, Update Dispatch Status
+- Comment on dispatches (that you sent and was sent)
+- Searching (with advanced filters)
 #### Admin
 - Manage all DriveItem of ALL users

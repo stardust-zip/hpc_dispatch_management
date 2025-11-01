@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, HttpUrl
+from pydantic import BaseModel, EmailStr, HttpUrl, Field
 from typing import Literal
 from datetime import datetime
 from enum import Enum
@@ -7,33 +7,23 @@ from enum import Enum
 
 
 class DispatchStatus(str, Enum):
-    """
-    Enum for dispatch statuses.
-    Pydantic wll validate against hese values.
-    """
-
     APPROVED = "Đã phê duyệt"
     REJECTED = "Đã từ chối"
     PENDING = "Chờ xử lý"
     IN_PROGRESS = "Đang xử lý"
     DRAFT = "Nháp"
-    # When in draft, lecturer can edit and delete dispatch,
-    # when they are in other status, only admin can affect them.
 
 
 class UserType(str, Enum):
     LECTURER = "lecturer"
-    STUDENT = "student"  # However, student can't access dispatch pages.
+    STUDENT = "student"
 
 
-# 1. User Schema (from user User Service JWT).
+# 1. User Schema (from User Service JWT)
+
+
 class User(BaseModel):
-    """
-    This model represents the user data decoded from
-    the JWT token.
-    """
-
-    sub: int  # User's id.
+    sub: int
     user_type: Literal["lecturer", "student"]
     username: str
     is_admin: bool
@@ -42,18 +32,22 @@ class User(BaseModel):
     department_id: int
     class_id: int | None = None
 
-    # Let's ignore the iat and exp in the model as they are for token validation,
-    # but the user dependency will check them.
+
+class UserInfo(BaseModel):
+    id: int
+    full_name: str
+    email: EmailStr
+
+    class ConfigDict:
+        from_attributes = True
 
 
 # 2. Kafka Notification Schemas
-class KafkaNewDispatchPayload(BaseModel):
-    """
-    This is the payload for the 'official.dispatch' Kafka topic.
-    """
 
+
+class KafkaNewDispatchPayload(BaseModel):
     user_id: int
-    user_type: Literal["lecturer", "student"]
+    user_type: UserType
     documentTitle: str
     documentUrl: HttpUrl
     documentSerialNumber: str
@@ -62,22 +56,18 @@ class KafkaNewDispatchPayload(BaseModel):
     actionRequired: str
     date: datetime
     sender_id: int
-    sender_type: Literal["lecturer", "student"]
+    sender_type: UserType
 
 
 class KafkaDispatchStatusUpdatePayload(BaseModel):
-    """
-    This is the payload for the 'official.dispatch.status.update' Kafka topic.
-    """
-
     user_id: int
-    user_type: Literal["lecturer", "student"]
+    user_type: UserType
     subject: str
     authorName: str
     documentSerialNumber: str
     documentTitle: str
     reviewerName: str
-    status: DispatchStatus
+    status: str
     reviewComment: str | None = None
     documentUrl: HttpUrl
     year: str
@@ -85,33 +75,43 @@ class KafkaDispatchStatusUpdatePayload(BaseModel):
 
 
 class KafkaMessage(BaseModel):
-    """
-    The complete message structure to be sent to the notification service.
-    """
-
     topic: str
     payload: (
         KafkaNewDispatchPayload | KafkaDispatchStatusUpdatePayload
-    )  # ruff is showing botth these name not defined
+    )  # Corrected Union
     priority: Literal["low", "medium", "high"] = "medium"
     key: str
 
 
 # 3. Dispatch Document Schemas
+
+
 class DispatchBase(BaseModel):
-    title: str
-    content: str
+    title: str = Field(..., max_length=255)
+    serial_number: str = Field(..., max_length=100)
+    description: str
+    file_url: HttpUrl | None = None
 
 
 class DispatchCreate(DispatchBase):
     pass
 
 
+class DispatchUpdate(BaseModel):
+    title: str | None = Field(None, max_length=255)
+    serial_number: str | None = Field(None, max_length=100)
+    description: str | None = None
+    file_url: HttpUrl | None = None
+    status: DispatchStatus | None = None
+
+
 class Dispatch(DispatchBase):
     id: int
-    owner_id: int
-    created_at: datetime
+    author_id: int
     status: DispatchStatus
+    created_at: datetime
+    updated_at: datetime | None = None
+    author: UserInfo
 
     class ConfigDict:
-        from_attributes: bool = True  # Change from org_mode for Pydantic v2.
+        from_attributes = True
