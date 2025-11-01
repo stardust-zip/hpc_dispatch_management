@@ -117,6 +117,12 @@ class Dispatch(DispatchBase):
         from_attributes: bool = True
 
 
+class DispatchTypeSearch(str, Enum):
+    INCOMING = "incoming"
+    OUTGOING = "outgoing"
+    ALL = "all"
+
+
 # 4. API Action Schemas
 class DispatchAssign(BaseModel):
     """Schema for assigning a dispatch to users."""

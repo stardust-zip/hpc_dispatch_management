@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from . import models, schemas
-from typing import List
+from sqlalchemy import or_
 
 # region User Cache Management
 
@@ -150,6 +150,65 @@ def assign_dispatch_to_users(
         db.refresh(assignee)
 
     return assignees
+
+
+def get_dispatches_with_filters(
+    db: Session,
+    user_id: int,
+    dispatch_type: schemas.DispatchTypeSearch,
+    status: schemas.DispatchStatus | None,
+    search: str | None,
+    skip: int,
+    limit: int,
+) -> list[models.Dispatch]:
+    """
+    Retrieves dispatches with advanced filtering based on the user's perspective.
+    """
+    # Start with a base query and eager load author info to prevent N+1 queries
+    query = db.query(models.Dispatch).options(joinedload(models.Dispatch.author))
+
+    # 1. Filter by User Perspective (INCOMING/OUTGOING)
+    if dispatch_type == schemas.DispatchTypeSearch.INCOMING:
+        # An incoming dispatch is one where the user is an assignee
+        query = query.join(models.DispatchAssignment).filter(
+            models.DispatchAssignment.assignee_id == user_id
+        )
+    elif dispatch_type == schemas.DispatchTypeSearch.OUTGOING:
+        # An outgoing dispatch is one where the user is the author
+        query = query.filter(models.Dispatch.author_id == user_id)
+    else:  # 'ALL'
+        # A dispatch is related to the user if they are the author OR an assignee
+        query = query.join(models.DispatchAssignment, isouter=True).filter(
+            or_(
+                models.Dispatch.author_id == user_id,
+                models.DispatchAssignment.assignee_id == user_id,
+            )
+        )
+
+    # 2. Filter by Status (if provided)
+    if status:
+        query = query.filter(models.Dispatch.status == status)
+
+    # 3. Filter by Search Term (if provided)
+    if search:
+        search_term = f"%{search}%"
+        # Case-insensitive search on title or serial number
+        query = query.filter(
+            or_(
+                models.Dispatch.title.ilike(search_term),
+                models.Dispatch.serial_number.ilike(search_term),
+            )
+        )
+
+    # Apply ordering and pagination before executing the query
+    dispatches = (
+        query.order_by(models.Dispatch.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+
+    return dispatches
 
 
 # endregion

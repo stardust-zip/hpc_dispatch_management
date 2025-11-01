@@ -34,12 +34,27 @@ def create_dispatch(
 def read_dispatches(
     skip: int = 0,
     limit: int = 100,
+    status: schemas.DispatchStatus | None = None,
+    dispatch_type: schemas.DispatchTypeSearch = schemas.DispatchTypeSearch.ALL,
+    search: str | None = None,
     db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user),
 ):
     """
-    Retrieve a list of all dispatches.
+    Retrieve a list of dispatches with advanced filtering:
+    - **status**: Filter by dispatch status (e.g., 'PENDING').
+    - **dispatch_type**: Filter by user perspective ('incoming', 'outgoing', or 'all').
+    - **search**: Search term for title or serial number.
     """
-    dispatches = crud.get_dispatches(db, skip=skip, limit=limit)
+    dispatches = crud.get_dispatches_with_filters(
+        db=db,
+        user_id=current_user.sub,
+        dispatch_type=dispatch_type,
+        status=status,
+        search=search,
+        skip=skip,
+        limit=limit,
+    )
     return dispatches
 
 
