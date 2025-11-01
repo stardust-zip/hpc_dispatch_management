@@ -1,4 +1,6 @@
 from sqlalchemy import (
+    Table,
+    Column,
     Integer,
     String,
     DateTime,
@@ -11,6 +13,13 @@ from sqlalchemy.sql import func
 from .database import Base
 from .schemas import DispatchStatus, UserType
 from datetime import datetime
+
+dispatch_folder_association = Table(
+    "dispatch_folder_association",
+    Base.metadata,
+    Column("dispatch_id", Integer, ForeignKey("dispatches.id"), primary_key=True),
+    Column("folder_id", Integer, ForeignKey("folders.id"), primary_key=True),
+)
 
 
 class User(Base):
@@ -30,12 +39,27 @@ class User(Base):
     department_id: Mapped[int] = mapped_column(Integer)
     is_admin: Mapped[bool] = mapped_column(default=False)
 
+    folders: Mapped[list["Folder"]] = relationship(back_populates="owner")
+
     # Relationship: A user can create many dispatches
     dispatches: Mapped[list["Dispatch"]] = relationship(back_populates="author")
-
     # Relationship: A user can be assigned to many dispatches
     assigned_dispatches: Mapped[list["DispatchAssignment"]] = relationship(
         back_populates="assignee"
+    )
+
+
+class Folder(Base):
+    __tablename__ = "folders"
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), index=True)
+
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    owner: Mapped["User"] = relationship(back_populates="folders")
+
+    # The many-to-many relationship to Dispatch
+    dispatches: Mapped[list["Dispatch"]] = relationship(
+        secondary=dispatch_folder_association, back_populates="folders"
     )
 
 
@@ -73,6 +97,10 @@ class Dispatch(Base):
     # Relationship: A dispatch can be assigned to many users
     assignments: Mapped[list["DispatchAssignment"]] = relationship(
         back_populates="dispatch"
+    )
+
+    folders: Mapped[list["Folder"]] = relationship(
+        secondary=dispatch_folder_association, back_populates="dispatches"
     )
 
 
