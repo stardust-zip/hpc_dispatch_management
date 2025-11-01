@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+
 from hpc_dispatch_management.main import app
 from hpc_dispatch_management.database import Base, get_db
 from hpc_dispatch_management import crud, schemas
@@ -228,3 +229,51 @@ def test_delete_draft_by_owner(db_session):
         headers={"Authorization": f"Bearer {LECTURER_TOKEN}"},
     )
     assert get_response.status_code == 404
+
+
+def test_assign_dispatch_and_send_notification(db_session, mocker):
+    # Mock the notification service function
+    mock_send_noti = mocker.patch(
+        "hpc_dispatch_management.services.send_new_dispatch_notification"
+    )
+
+    # Create a dispatch as the lecturer (user 1)
+    response = client.post(
+        "/dispatches/",
+        headers={"Authorization": f"Bearer {LECTURER_TOKEN}"},
+        json={
+            "title": "Dispatch to Assign",
+            "serial_number": "DTA-001",
+            "description": "desc",
+        },
+    )
+    dispatch_id = response.json()["id"]
+
+    # The admin (user 2) will be the assignee. We need to sync them to the test DB first.
+    admin_user_data = schemas.User(
+        sub=2,
+        user_type="lecturer",
+        username="admin1",
+        is_admin=True,
+        email="admin1@s.com",
+        full_name="Admin User",
+        department_id=1,
+    )
+    crud.sync_user_from_jwt(db_session, admin_user_data)
+
+    # Now, assign the dispatch
+    assign_response = client.post(
+        f"/dispatches/{dispatch_id}/assign",
+        headers={"Authorization": f"Bearer {LECTURER_TOKEN}"},
+        json={"assignee_ids": [2], "action_required": "Please review."},
+    )
+
+    assert assign_response.status_code == 200
+    assert "notifications sent" in assign_response.json()["message"]
+
+    # Verify that our mocked notification function was called exactly once
+    mock_send_noti.assert_called_once()
+    # You can even inspect the arguments it was called with
+    call_args = mock_send_noti.call_args[1]
+    assert call_args["assignee"].id == 2
+    assert call_args["assigner"].id == 1

@@ -113,10 +113,18 @@ def delete_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
 def assign_dispatch_to_users(
     db: Session, db_dispatch: models.Dispatch, assignment_data: schemas.DispatchAssign
 ) -> list[models.User]:
+    """
+    Creates DispatchAssignment records and updates dispatch status.
+    Returns the list of assignee user objects.
+    """
     assignee_ids = assignment_data.assignee_ids
-    assignees = db.query(models.User).filter(models.User.id.in_(assignee_ids)).all()
+    # Using set for efficiency and to handle duplicate IDs in input
+    unique_assignee_ids = set(assignee_ids)
+    assignees = (
+        db.query(models.User).filter(models.User.id.in_(unique_assignee_ids)).all()
+    )
 
-    if len(assignees) != len(set(assignee_ids)):
+    if len(assignees) != len(unique_assignee_ids):
         raise ValueError("One or more assignee IDs are invalid.")
 
     for assignee in assignees:
@@ -127,10 +135,19 @@ def assign_dispatch_to_users(
         )
         db.add(assignment)
 
+    # Transition the dispatch from DRAFT to PENDING
     db_dispatch.status = schemas.DispatchStatus.PENDING
     db.add(db_dispatch)
+
+    # A commit expires the state of all instances.
     db.commit()
+
+    # After a commit, refresh the objects that will be used
+    # outside this session. This loads their fresh state so they no longer
+    # need the session to be accessed.
     db.refresh(db_dispatch)
+    for assignee in assignees:
+        db.refresh(assignee)
 
     return assignees
 

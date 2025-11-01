@@ -82,6 +82,7 @@
               fastapi
               pytest
               uvicorn
+              pytest-mock
 
               httpx
               sqlmodel
