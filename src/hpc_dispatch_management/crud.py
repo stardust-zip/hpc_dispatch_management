@@ -5,19 +5,19 @@ from typing import List
 # region User Cache Management
 
 
+def get_user(db: Session, user_id: int) -> models.User | None:
+    """
+    FIX: Retrieves a single user from the local database cache by their ID.
+    This function was missing.
+    """
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+
 def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
     """
     Synchronizes user data from a trusted JWT into our local database.
-
-    This function checks if a user exists in our local cache.
-    - If they do, it updates their details from the JWT.
-    - If they don't, it creates a new record in our local cache.
-
-    This is NOT creating a new system-wide user. It's creating a local
-    replica required for database foreign key relationships.
     """
-    db_user = db.query(models.User).filter(models.User.id == user_jwt_data.sub).first()
-
+    db_user = get_user(db, user_id=user_jwt_data.sub)  # Now uses the new function
     if db_user:
         # User exists, update their cached info in case it changed
         db_user.username = user_jwt_data.username
@@ -33,7 +33,7 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
             username=user_jwt_data.username,
             email=user_jwt_data.email,
             full_name=user_jwt_data.full_name,
-            user_type=user_jwt_data.user_type,
+            user_type=schemas.UserType(user_jwt_data.user_type),
             department_id=user_jwt_data.department_id,
             is_admin=user_jwt_data.is_admin,
         )
@@ -50,9 +50,6 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
 
 
 def get_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
-    """
-    Retrieves a single dispatch by its ID, eager-loading the author info.
-    """
     return (
         db.query(models.Dispatch)
         .options(joinedload(models.Dispatch.author))
@@ -63,10 +60,7 @@ def get_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
 
 def get_dispatches(
     db: Session, skip: int = 0, limit: int = 100
-) -> List[models.Dispatch]:
-    """
-    Retrieves a list of dispatches with pagination.
-    """
+) -> list[models.Dispatch]:
     return (
         db.query(models.Dispatch)
         .options(joinedload(models.Dispatch.author))
@@ -79,18 +73,13 @@ def get_dispatches(
 def create_dispatch(
     db: Session, dispatch: schemas.DispatchCreate, author_id: int
 ) -> models.Dispatch:
-    """
-    Creates a new dispatch record in the database.
-    """
     dispatch_data = dispatch.model_dump()
-
     if dispatch_data.get("file_url"):
         dispatch_data["file_url"] = str(dispatch_data["file_url"])
 
     db_dispatch = models.Dispatch(
         **dispatch_data, author_id=author_id, status=schemas.DispatchStatus.DRAFT
     )
-
     db.add(db_dispatch)
     db.commit()
     db.refresh(db_dispatch)
@@ -100,19 +89,13 @@ def create_dispatch(
 def update_dispatch(
     db: Session, db_dispatch: models.Dispatch, dispatch_update: schemas.DispatchUpdate
 ) -> models.Dispatch:
-    """
-    Updates an existing dispatch record.
-    """
     update_data = dispatch_update.model_dump(exclude_unset=True)
-
     if update_data.get("file_url"):
         update_data["file_url"] = str(update_data["file_url"])
 
     for key, value in update_data.items():
         setattr(db_dispatch, key, value)
 
-    for key, value in update_data.items():
-        setattr(db_dispatch, key, value)
     db.add(db_dispatch)
     db.commit()
     db.refresh(db_dispatch)
@@ -120,14 +103,36 @@ def update_dispatch(
 
 
 def delete_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
-    """
-    Deletes a dispatch from the database.
-    """
     db_dispatch = get_dispatch(db, dispatch_id)
     if db_dispatch:
         db.delete(db_dispatch)
         db.commit()
     return db_dispatch
+
+
+def assign_dispatch_to_users(
+    db: Session, db_dispatch: models.Dispatch, assignment_data: schemas.DispatchAssign
+) -> list[models.User]:
+    assignee_ids = assignment_data.assignee_ids
+    assignees = db.query(models.User).filter(models.User.id.in_(assignee_ids)).all()
+
+    if len(assignees) != len(set(assignee_ids)):
+        raise ValueError("One or more assignee IDs are invalid.")
+
+    for assignee in assignees:
+        assignment = models.DispatchAssignment(
+            dispatch_id=db_dispatch.id,
+            assignee_id=assignee.id,
+            action_required=assignment_data.action_required,
+        )
+        db.add(assignment)
+
+    db_dispatch.status = schemas.DispatchStatus.PENDING
+    db.add(db_dispatch)
+    db.commit()
+    db.refresh(db_dispatch)
+
+    return assignees
 
 
 # endregion

@@ -1,6 +1,5 @@
-import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status
-from typing import Annotated
+from fastapi import FastAPI
+
 from .routers import dispatches
 
 app = FastAPI(

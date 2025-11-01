@@ -39,7 +39,7 @@ class UserInfo(BaseModel):
     email: EmailStr
 
     class ConfigDict:
-        from_attributes = True
+        from_attributes: bool = True
 
 
 # 2. Kafka Notification Schemas
@@ -114,4 +114,19 @@ class Dispatch(DispatchBase):
     author: UserInfo
 
     class ConfigDict:
-        from_attributes = True
+        from_attributes: bool = True
+
+
+# 4. API Action Schemas
+class DispatchAssign(BaseModel):
+    """Schema for assigning a dispatch to users."""
+
+    assignee_ids: list[int]
+    action_required: str = Field(..., max_length=500)
+
+
+class DispatchStatusUpdate(BaseModel):
+    """Schema for an assignee to update the status of a dispatch."""
+
+    status: Literal[DispatchStatus.APPROVED, DispatchStatus.REJECTED]
+    review_comment: str | None = Field(None, max_length=1000)

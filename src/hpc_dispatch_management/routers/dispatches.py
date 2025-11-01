@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
 
-from .. import crud, schemas
+
+from .. import crud, schemas, services
 from ..database import get_db
 from ..security import get_current_user
 
@@ -26,11 +26,11 @@ def create_dispatch(
     - New dispatches always start with 'DRAFT' status.
     """
     # Sync user from JWT to local DB to ensure foreign key constraint is met
-    crud.sync_user_from_jwt(db=db, user_jwt_data=current_user)
+    _ = crud.sync_user_from_jwt(db=db, user_jwt_data=current_user)
     return crud.create_dispatch(db=db, dispatch=dispatch, author_id=current_user.sub)
 
 
-@router.get("/", response_model=List[schemas.Dispatch])
+@router.get("/", response_model=list[schemas.Dispatch])
 def read_dispatches(
     skip: int = 0,
     limit: int = 100,
@@ -118,5 +118,101 @@ def delete_dispatch(
             detail="You do not have permission to delete this dispatch.",
         )
 
-    crud.delete_dispatch(db=db, dispatch_id=dispatch_id)
+    _ = crud.delete_dispatch(db=db, dispatch_id=dispatch_id)
     return
+
+
+@router.post("/{dispatch_id}/assign", status_code=status.HTTP_200_OK)
+async def assign_dispatch(
+    dispatch_id: int,
+    assignment: schemas.DispatchAssign,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user),
+):
+    """
+    Assign a DRAFT dispatch to users.
+    - Only the author can assign a dispatch.
+    - This changes the status from DRAFT to PENDING.
+    - This sends a notification to each assignee.
+    """
+    db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
+    if not db_dispatch:
+        raise HTTPException(status_code=404, detail="Dispatch not found")
+    if db_dispatch.author_id != current_user.sub:
+        raise HTTPException(
+            status_code=403, detail="Only the author can assign this dispatch"
+        )
+    if db_dispatch.status != schemas.DispatchStatus.DRAFT:
+        raise HTTPException(
+            status_code=400, detail="Only draft dispatches can be assigned"
+        )
+
+    # Sync assignees' user data from JWT if they don't exist in cache (hypothetically)
+    # In a real scenario, you'd probably need to fetch user details from the User service.
+    # For now, we assume they have interacted with the service before.
+
+    try:
+        assignees = crud.assign_dispatch_to_users(db, db_dispatch, assignment)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Send notifications to all assignees
+    for assignee in assignees:
+        await services.send_new_dispatch_notification(
+            dispatch=db_dispatch,
+            assigner=db_dispatch.author,
+            assignee=assignee,
+            action_required=assignment.action_required,
+        )
+
+    return {
+        "message": f"Dispatch assigned to {len(assignees)} user(s) and notifications sent."
+    }
+
+
+@router.put("/{dispatch_id}/status", response_model=schemas.Dispatch)
+async def update_dispatch_status(
+    dispatch_id: int,
+    status_update: schemas.DispatchStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: schemas.User = Depends(get_current_user),
+):
+    """
+    Update the status of a dispatch (Approve/Reject).
+    - Only an assignee can perform this action.
+    - Sends a notification back to the original author.
+    """
+    db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
+    if not db_dispatch:
+        raise HTTPException(status_code=404, detail="Dispatch not found")
+
+    # Verify if the current user is an assignee of this dispatch
+    is_assignee = any(
+        assign.assignee_id == current_user.sub for assign in db_dispatch.assignments
+    )
+    if not is_assignee:
+        raise HTTPException(
+            status_code=403, detail="You are not an assignee of this dispatch"
+        )
+
+    # Update the dispatch status
+    db_dispatch.status = status_update.status
+    db.commit()
+    db.refresh(db_dispatch)
+
+    reviewer = crud.get_user(db, current_user.sub)
+    if not reviewer:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reviewer user not found.",
+        )
+
+    # Send notification back to the author
+    await services.send_status_update_notification(
+        dispatch=db_dispatch,
+        reviewer=reviewer,  # Pass the validated reviewer
+        status=status_update.status,
+        comment=status_update.review_comment,
+    )
+
+    return db_dispatch
