@@ -83,6 +83,7 @@
               pytest
               uvicorn
               pytest-mock
+              pymysql
 
               httpx
               sqlmodel

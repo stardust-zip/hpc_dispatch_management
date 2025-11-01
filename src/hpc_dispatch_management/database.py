@@ -2,17 +2,23 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 from collections.abc import Generator
+from .settings import settings
 
 # Define the path for SQLite db.
 # It will be created in the project root as 'hpc_dispatch.db'
-DATABASE_FILE = "hpc_dispatch.db"
-SQLALCHEMY_DATABASE_URL = f"sqlite:///./{DATABASE_FILE}"
+# DATABASE_FILE = "hpc_dispatch.db"
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+print(f"Connecting to database: {SQLALCHEMY_DATABASE_URL}")
+
+# Create the SQLAlchemy engine.
+# The logic for SQLite's 'check_same_thread should only apply if we're using SQLite.
+connect_args = (
+    {"check_same_thread": False} if SQLALCHEMY_DATABASE_URL.startswith("sqlite") else {}
+)
 
 # Create the SQLAlchey engine.
 # connect_args is needed only for SQLite to allow multithreaded access.
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args=connect_args)
 
 # Create a SessionLocal class.
 # This is a facotry for new database sessions.
@@ -41,6 +47,9 @@ def get_db() -> Generator[Session, None, None]:
 def create_db_and_tables():
     """
     Function to create all db tables.
+    Only create table if using SQLite(for local dev).
+    In production, migrations should handle the MySQL schema.
     """
-    print(f"Creating databse tables at {os.path.abspath(DATABASE_FILE)}")
-    Base.metadata.create_all(bind=engine)
+    if settings.DATABASE_URL.startswith("sqlite"):
+        print("Creating SQLite database tables...")
+        Base.metadata.create_all(bind=engine)

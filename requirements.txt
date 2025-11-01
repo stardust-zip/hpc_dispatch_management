@@ -15,6 +15,7 @@ requests
 sqlalchemy
 sqlmodel
 uvicorn[standard]
+PyMySQL
 
 # Development & Testing Dependencies
 black
