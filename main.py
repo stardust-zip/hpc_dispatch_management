@@ -1,18 +1,33 @@
-import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status
-from typing import Annotated
-from . import schemas
+from contextlib import asynccontextmanager
+from hpc_dispatch_management.database import (
+    create_db_and_tables,
+)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Async context manager for FastAPI lifespan events.
+    This replaces the old @app.on_event("startup") decorator.
+    """
+    print("Service starting up...")
+    # Create database tables on startup
+    create_db_and_tables()
+    yield
+    # Code here would run on shutdown
+    print("Service shutting down...")
 
 
 app = FastAPI(
     title="HPC Dispatch Management Service",
-    description="Hanldes creation, tracking, and notification of official dispatches.",
+    description="Handles creation, tracking, and notification of official dispatches.",
     version="0.1.0",
+    lifespan=lifespan,  # Register the lifespan event handler
 )
 
 
-# Simple healthcheck endpoint to make sure
-# our service is running.
+# Simple healthcheck endpoint
 @app.get("/", tags=["Health Check"])
 async def read_root():
     """
@@ -22,4 +37,15 @@ async def read_root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8888)
+    import uvicorn
+
+    print("Starting Uvicorn server...")
+    uvicorn.run(
+        "hpc_dispatch_management.main:app",
+        host="0.0.0.0",
+        port=8888,
+        reload=True,
+        # Set the app_dir to the 'src' directory
+        # to ensure correct module loading
+        app_dir="src",
+    )
