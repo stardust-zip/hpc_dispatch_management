@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  dispatch_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hpc_dispatch_service
+    restart: unless-stopped
+    ports:
+      # Map port 8888 on your local machine to port 8000 inside the container
+      - "8888:8888"
+    volumes:
+      # This mounts your local src directory into the container.
+      # Changes you make to your code will be reflected instantly without rebuilding.
+      - ./src:/app/src
+    environment:
+      # IMPORTANT: This URL points to the Nginx container of your other service.
+      # Inside the Docker network, services can talk to each other using their container names.
+      # The `hpc_web` (Nginx) service exposes port 80 internally.
+      - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
+    networks:
+      # Connect this service to the existing network
+      - hpc_network
+
+networks:
+  hpc_network:
+    # This tells Docker Compose that 'hpc_network' is an existing,
+    # external network created by your other docker-compose file.
+    external: true

@@ -1,0 +1,24 @@
+# Application Dependencies
+alembic
+bcrypt
+email-validator
+fastapi
+httpx
+passlib
+pydantic
+pydantic-settings
+PyJWT
+python-dotenv
+python-jose
+python-multipart
+requests
+sqlalchemy
+sqlmodel
+uvicorn[standard]
+
+# Development & Testing Dependencies
+black
+pytest
+pytest-mock
+python-lsp-server
+ruff
