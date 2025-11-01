@@ -1,0 +1,20 @@
+# This file is for configuring your development tools.
+
+[tool.pytest.ini_options]
+# Tell pytest to add the 'src' directory to the PYTHONPATH
+pythonpath = [
+  "src"
+]
+
+[tool.pyright]
+# Tell basedpyright (for Zed) to add 'src' to its list of
+# paths to search for imports. This directly fixes the
+# "reportMissingImports" error.
+extraPaths = [
+  "src"
+]
+
+# We can also add ruff config here if we want
+[tool.ruff]
+line-length = 88
+
