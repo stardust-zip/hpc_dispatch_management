@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, HttpUrl
-from typing import Literal, Optional
+from typing import Literal
 from datetime import datetime
 from enum import Enum
 
@@ -40,7 +40,7 @@ class User(BaseModel):
     email: EmailStr
     full_name: str
     department_id: int
-    class_id: Optional[int] = None
+    class_id: int | None = None
 
     # Let's ignore the iat and exp in the model as they are for token validation,
     # but the user dependency will check them.
@@ -78,7 +78,7 @@ class KafkaDispatchStatusUpdatePayload(BaseModel):
     documentTitle: str
     reviewerName: str
     status: DispatchStatus
-    reviewComment: Optional[str] = None
+    reviewComment: str | None = None
     documentUrl: HttpUrl
     year: str
     app_name: str = "HPC Corp"
@@ -114,4 +114,4 @@ class Dispatch(DispatchBase):
     status: DispatchStatus
 
     class ConfigDict:
-        from_attributes = True  # Change from org_mode for Pydantic v2.
+        from_attributes: bool = True  # Change from org_mode for Pydantic v2.

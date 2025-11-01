@@ -1,8 +1,7 @@
 import os
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-from typing import Generator
+from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
+from collections.abc import Generator
 
 # Define the path for SQLite db.
 # It will be created in the project root as 'hpc_dispatch.db'
@@ -19,12 +18,14 @@ engine = create_engine(
 # This is a facotry for new database sessions.
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+
 # Create a Base class.
 # Our databse models with inherit from this class.
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 
-def get_db() -> Generator:
+def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency to get a db session.
     Yields a sesion for a single request and ensure it's
