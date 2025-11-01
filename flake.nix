@@ -96,9 +96,11 @@
               passlib
               bcrypt
               python-multipart
+              jwt
+              pyjwt
 
               # Add whatever else you'd like here.
-              # pkgs.basedpyright
+              pkgs.basedpyright
 
               # pkgs.black
               # or
