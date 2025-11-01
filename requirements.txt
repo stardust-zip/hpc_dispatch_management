@@ -16,6 +16,7 @@ sqlalchemy
 sqlmodel
 uvicorn[standard]
 PyMySQL
+alembic
 
 # Development & Testing Dependencies
 black

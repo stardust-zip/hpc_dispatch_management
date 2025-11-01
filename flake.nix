@@ -84,6 +84,7 @@
               uvicorn
               pytest-mock
               pymysql
+              alembic
 
               httpx
               sqlmodel

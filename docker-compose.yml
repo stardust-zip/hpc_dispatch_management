@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   dispatch_service:
     build:
@@ -8,23 +6,53 @@ services:
     container_name: hpc_dispatch_service
     restart: unless-stopped
     ports:
-      # Map port 8888 on your local machine to port 8000 inside the container
       - "8888:8888"
     volumes:
-      # This mounts your local src directory into the container.
-      # Changes you make to your code will be reflected instantly without rebuilding.
       - ./src:/app/src
+      # Mount the local SQLite DB for development if needed, though Docker will use MySQL
+      - ./hpc_dispatch.db:/app/hpc_dispatch.db
+    env_file:
+      - .env # Load variables from the .env file
     environment:
-      # IMPORTANT: This URL points to the Nginx container of your other service.
-      # Inside the Docker network, services can talk to each other using their container names.
-      # The `hpc_web` (Nginx) service exposes port 80 internally.
+      # This URL correctly points to the User Service's Nginx container
       - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
+      # This builds the MySQL connection string using variables from the .env file
+      - DATABASE_URL=mysql+pymysql://${DISPATCH_DB_USER}:${DISPATCH_DB_PASSWORD}@dispatch_db/${DISPATCH_DB_DATABASE}
     networks:
-      # Connect this service to the existing network
+      - hpc_network
+    depends_on:
+      # This service must wait for its own database to be ready
+      dispatch_db:
+        condition: service_healthy
+
+  # NEW: A dedicated MySQL database container for the Dispatch Service
+  dispatch_db:
+    image: mysql:8.0
+    container_name: hpc_dispatch_db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    env_file:
+      - .env # Load variables from the .env file
+    environment:
+      # Use the variables to configure the MySQL container
+      - MYSQL_DATABASE=${DISPATCH_DB_DATABASE}
+      - MYSQL_USER=${DISPATCH_DB_USER}
+      - MYSQL_PASSWORD=${DISPATCH_DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DISPATCH_DB_ROOT_PASSWORD}
+    volumes:
+      # Give it its own persistent data volume
+      - dispatch_db_data:/var/lib/mysql
+    networks:
       - hpc_network
 
 networks:
   hpc_network:
-    # This tells Docker Compose that 'hpc_network' is an existing,
-    # external network created by your other docker-compose file.
+    # This still correctly connects to the external network created by the main compose file
     external: true
+
+volumes:
+  # Define the volume for our new database
+  dispatch_db_data:

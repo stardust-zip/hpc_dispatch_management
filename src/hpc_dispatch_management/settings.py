@@ -13,7 +13,9 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./hpc_dispatch.db"
 
     # Pydantic v2 configuration
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
 
 # Create a single, reusable instance of the settings
