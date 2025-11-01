@@ -45,6 +45,7 @@ class User(BaseModel):
     # Let's ignore the iat and exp in the model as they are for token validation,
     # but the user dependency will check them.
 
+
 # 2. Kafka Notification Schemas
 class KafkaNewDispatchPayload(BaseModel):
     """
@@ -62,6 +63,7 @@ class KafkaNewDispatchPayload(BaseModel):
     date: datetime
     sender_id: int
     sender_type: Literal["lecturer", "student"]
+
 
 class KafkaDispatchStatusUpdatePayload(BaseModel):
     """
@@ -81,6 +83,7 @@ class KafkaDispatchStatusUpdatePayload(BaseModel):
     year: str
     app_name: str = "HPC Corp"
 
+
 class KafkaMessage(BaseModel):
     """
     The complete message structure to be sent to the notification service.
@@ -93,13 +96,16 @@ class KafkaMessage(BaseModel):
     priority: Literal["low", "medium", "high"] = "medium"
     key: str
 
+
 # 3. Dispatch Document Schemas
 class DispatchBase(BaseModel):
     title: str
     content: str
 
+
 class DispatchCreate(DispatchBase):
     pass
+
 
 class Dispatch(DispatchBase):
     id: int
@@ -107,5 +113,5 @@ class Dispatch(DispatchBase):
     created_at: datetime
     status: DispatchStatus
 
-    class Config:
+    class ConfigDict:
         from_attributes = True  # Change from org_mode for Pydantic v2.
