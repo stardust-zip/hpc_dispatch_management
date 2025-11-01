@@ -112,7 +112,7 @@ class DispatchAssignment(Base):
 
     __tablename__: str = "dispatch_assignments"
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True)
     dispatch_id: Mapped[int] = mapped_column(ForeignKey("dispatches.id"))
 
     # The user (lecturer/admin) it's assigned to

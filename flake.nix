@@ -85,6 +85,7 @@
               pytest-mock
               pymysql
               alembic
+              cryptography
 
               httpx
               sqlmodel
