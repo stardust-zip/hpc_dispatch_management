@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     # If it's not found, it defaults to SQLite db for local development.
     DATABASE_URL: str = "sqlite:///./hpc_dispatch.db"
 
+    JWT_SECRET: str = "default-secret-key"
+    JWT_ALGO: str = "HS256"
+
     # Pydantic v2 configuration
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

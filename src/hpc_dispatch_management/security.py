@@ -1,10 +1,12 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from typing import Annotated
-
+from jose import JWTError, jwt
 from pydantic import ValidationError
 
+
 from .schemas import User, UserType
+from .settings import settings
 
 # This tells FastAPI to look for an "Authorization: Bearer <token>" header
 oauth2_scheme = OAuth2PasswordBearer(
@@ -29,57 +31,57 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]) -> User:
     # --- MOCK LOGIC FOR TDD ---
     # In our test, we'll pass special "mock" tokens.
     # In a real app, this block would be replaced by jwt.decode()
-    if token == "mock_token_lecturer":
-        user_data = {
-            "sub": 1,
-            "user_type": "lecturer",
-            "username": "lecturer1",
-            "is_admin": False,
-            "email": "lecturer1@system.com",
-            "full_name": "Lecturer 1",
-            "department_id": 1,
-        }
-    elif token == "mock_token_admin":
-        user_data = {
-            "sub": 2,
-            "user_type": "lecturer",
-            "username": "admin1",
-            "is_admin": True,
-            "email": "admin1@system.com",
-            "full_name": "Admin User",
-            "department_id": 1,
-        }
-    elif token == "mock_token_student":
-        user_data = {
-            "sub": 3,
-            "user_type": "student",
-            "username": "student1",
-            "is_admin": False,
-            "email": "student1@system.com",
-            "full_name": "Student 1",
-            "department_id": 1,
-            "class_id": 101,
-        }
-    else:
-        # This simulates a real JWT decode error
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # --- END MOCK LOGIC ---
-
-    # --- REAL LOGIC (commented out for now) ---
-    # try:
-    #     payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[ALGORITHM])
-    #     user_data = payload
-    # except (jwt.PyJWTError, ValidationError):
+    # if token == "mock_token_lecturer":
+    #     user_data = {
+    #         "sub": 1,
+    #         "user_type": "lecturer",
+    #         "username": "lecturer1",
+    #         "is_admin": False,
+    #         "email": "lecturer1@system.com",
+    #         "full_name": "Lecturer 1",
+    #         "department_id": 1,
+    #     }
+    # elif token == "mock_token_admin":
+    #     user_data = {
+    #         "sub": 2,
+    #         "user_type": "lecturer",
+    #         "username": "admin1",
+    #         "is_admin": True,
+    #         "email": "admin1@system.com",
+    #         "full_name": "Admin User",
+    #         "department_id": 1,
+    #     }
+    # elif token == "mock_token_student":
+    #     user_data = {
+    #         "sub": 3,
+    #         "user_type": "student",
+    #         "username": "student1",
+    #         "is_admin": False,
+    #         "email": "student1@system.com",
+    #         "full_name": "Student 1",
+    #         "department_id": 1,
+    #         "class_id": 101,
+    #     }
+    # else:
+    #     # This simulates a real JWT decode error
     #     raise HTTPException(
     #         status_code=status.HTTP_401_UNAUTHORIZED,
     #         detail="Invalid authentication credentials",
     #         headers={"WWW-Authenticate": "Bearer"},
     #     )
+
+    # --- END MOCK LOGIC ---
+
+    # --- REAL LOGIC (commented out for now) ---
+    try:
+        payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGO])
+        user_data = payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     # --- END REAL LOGIC ---
 
     try:
