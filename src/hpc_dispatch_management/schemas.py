@@ -127,7 +127,7 @@ class DispatchTypeSearch(str, Enum):
 class DispatchAssign(BaseModel):
     """Schema for assigning a dispatch to users."""
 
-    assignee_ids: list[int]
+    assignee_usernames: list[str]
     action_required: str = Field(..., max_length=500)
 
 

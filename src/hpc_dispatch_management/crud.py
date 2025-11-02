@@ -117,15 +117,17 @@ def assign_dispatch_to_users(
     Creates DispatchAssignment records and updates dispatch status.
     Returns the list of assignee user objects.
     """
-    assignee_ids = assignment_data.assignee_ids
-    # Using set for efficiency and to handle duplicate IDs in input
-    unique_assignee_ids = set(assignee_ids)
+    assignee_usernames = assignment_data.assignee_usernames
+    # Using set for efficiency and to handle duplicate usernames in input
+    unique_assignee_usernames = set(assignee_usernames)
     assignees = (
-        db.query(models.User).filter(models.User.id.in_(unique_assignee_ids)).all()
+        db.query(models.User)
+        .filter(models.User.username.in_(unique_assignee_usernames))
+        .all()
     )
 
-    if len(assignees) != len(unique_assignee_ids):
-        raise ValueError("One or more assignee IDs are invalid.")
+    if len(assignees) != len(unique_assignee_usernames):
+        raise ValueError("One or more assignee usernames are invalid.")
 
     for assignee in assignees:
         assignment = models.DispatchAssignment(
