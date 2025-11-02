@@ -3,10 +3,45 @@ from .routers import dispatches, folders
 from fastapi.middleware.cors import CORSMiddleware
 from .settings import settings
 
+import httpx
+import logging
+from contextlib import asynccontextmanager
+from .database import http_client_store, create_db_and_tables
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manage application startup and shutdown events.
+    Handles DB creation and shared HTTP client.
+    """
+    # Startup
+    logger.info("Application starting up...")
+    if settings.MOCK_AUTH_ENABLED:
+        logger.warning("!!! MOCK AUTHENTICATION IS ENABLED !!!")
+    else:
+        logger.info(f"Connecting to User Service at: {settings.HPC_USER_SERVICE_URL}")
+
+    # Call your original DB creation function
+    create_db_and_tables()
+
+    http_client_store["client"] = httpx.AsyncClient()
+    logger.info("Startup complete.")
+    yield
+    # Shutdown
+    logger.info("Application shutting down...")
+    await http_client_store["client"].aclose()
+    logger.info("Shutdown complete.")
+
+
 app = FastAPI(
     title="HPC Dispatch Management Service",
     description="Handles creation, tracking, and notification of official dispatches.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 # cors
@@ -34,6 +69,8 @@ async def debug_settings():
     print("--- DEBUG SETTINGS CHECK ---")
     print(f"RUNNING WITH SECRET: '{settings.JWT_SECRET}'")
     print(f"RUNNING WITH ALGO:   '{settings.JWT_ALGO}'")
+    print(f"USER SERVICE URL:  '{settings.HPC_USER_SERVICE_URL}'")
+    print(f"MOCK AUTH ENABLED: '{settings.MOCK_AUTH_ENABLED}'")
     print("----------------------------")
     return {
         "message": "Settings have been printed to container logs. Please check them.",

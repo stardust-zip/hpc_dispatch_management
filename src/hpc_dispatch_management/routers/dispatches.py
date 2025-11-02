@@ -15,7 +15,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=schemas.Dispatch, status_code=status.HTTP_201_CREATED)
-def create_dispatch(
+async def create_dispatch(
     dispatch: schemas.DispatchCreate,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
@@ -31,7 +31,7 @@ def create_dispatch(
 
 
 @router.get("/", response_model=list[schemas.Dispatch])
-def read_dispatches(
+async def read_dispatches(
     skip: int = 0,
     limit: int = 100,
     status: schemas.DispatchStatus | None = None,
@@ -59,7 +59,7 @@ def read_dispatches(
 
 
 @router.get("/{dispatch_id}", response_model=schemas.Dispatch)
-def read_dispatch(dispatch_id: int, db: Session = Depends(get_db)):
+async def read_dispatch(dispatch_id: int, db: Session = Depends(get_db)):
     """
     Retrieve a single dispatch by its ID.
     """
@@ -70,7 +70,7 @@ def read_dispatch(dispatch_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{dispatch_id}", response_model=schemas.Dispatch)
-def update_dispatch(
+async def update_dispatch(
     dispatch_id: int,
     dispatch_update: schemas.DispatchUpdate,
     db: Session = Depends(get_db),
@@ -107,7 +107,7 @@ def update_dispatch(
 
 
 @router.delete("/{dispatch_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_dispatch(
+async def delete_dispatch(
     dispatch_id: int,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),

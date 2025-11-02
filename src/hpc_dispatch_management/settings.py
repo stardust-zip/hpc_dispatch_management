@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "default-secret-key"
     JWT_ALGO: str = "HS256"
 
+    HPC_USER_SERVICE_URL: str = "httpL//localhost:8080/api/v1"
+    MOCK_AUTH_ENABLED: bool = False
+
     # Pydantic v2 configuration
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

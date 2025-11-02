@@ -106,6 +106,9 @@
               # Add whatever else you'd like here.
               pkgs.basedpyright
 
+              pkgs.sqlite
+              pkgs.sqlite-web
+
               # pkgs.black
               # or
               python.pkgs.black

@@ -14,7 +14,7 @@ router = APIRouter(
 
 
 @router.post("/", response_model=schemas.Folder, status_code=status.HTTP_201_CREATED)
-def create_folder_for_user(
+async def create_folder_for_user(
     folder: schemas.FolderCreate,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
@@ -23,7 +23,7 @@ def create_folder_for_user(
 
 
 @router.get("/", response_model=List[schemas.Folder])
-def read_user_folders(
+async def read_user_folders(
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
 ):
@@ -31,7 +31,7 @@ def read_user_folders(
 
 
 @router.post("/{folder_id}/dispatches/{dispatch_id}", response_model=schemas.Folder)
-def add_dispatch_to_folder(
+async def add_dispatch_to_folder(
     folder_id: int,
     dispatch_id: int,
     db: Session = Depends(get_db),
@@ -52,7 +52,7 @@ def add_dispatch_to_folder(
 @router.delete(
     "/{folder_id}/dispatches/{dispatch_id}", status_code=status.HTTP_204_NO_CONTENT
 )
-def remove_dispatch_from_folder(
+async def remove_dispatch_from_folder(
     folder_id: int,
     dispatch_id: int,
     db: Session = Depends(get_db),
@@ -70,7 +70,7 @@ def remove_dispatch_from_folder(
 
 
 @router.delete("/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_folder(
+async def delete_folder(
     folder_id: int,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),

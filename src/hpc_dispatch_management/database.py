@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, Session
 from collections.abc import Generator
 from .settings import settings
+import httpx
 
 # Define the path for SQLite db.
 # It will be created in the project root as 'hpc_dispatch.db'
@@ -31,6 +32,9 @@ class Base(DeclarativeBase):
     pass
 
 
+http_client_store = {}
+
+
 def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency to get a db session.
@@ -42,6 +46,13 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+async def get_http_client() -> httpx.AsyncClient:
+    """
+    Dependency to get the shared httpx.AsyncClient instance.
+    """
+    return http_client_store["client"]
 
 
 def create_db_and_tables():
