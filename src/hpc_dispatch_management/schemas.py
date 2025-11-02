@@ -29,7 +29,7 @@ class User(BaseModel):
     is_admin: bool
     email: EmailStr
     full_name: str
-    department_id: int | None = None
+    department_id: int
     class_id: int | None = None
 
 

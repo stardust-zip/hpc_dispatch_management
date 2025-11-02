@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     HPC_USER_SERVICE_URL: str = "httpL//localhost:8080/api/v1"
     MOCK_AUTH_ENABLED: bool = False
 
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+
     # Pydantic v2 configuration
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
