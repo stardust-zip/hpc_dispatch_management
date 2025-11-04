@@ -8,7 +8,10 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Step 4: Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 
 # Step 5: Copy the rest of the application files into the container
 # This is the key change. `COPY . .` copies everything from the build context

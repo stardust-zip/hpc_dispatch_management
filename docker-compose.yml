@@ -9,50 +9,12 @@ services:
       - "8888:8888"
     volumes:
       - ./src:/app/src
-      # Mount the local SQLite DB for development if needed, though Docker will use MySQL
+      # Mount the local SQLite DB for development and persistence
       - ./hpc_dispatch.db:/app/hpc_dispatch.db
     env_file:
       - .env # Load variables from the .env file
     environment:
       # This URL correctly points to the User Service's Nginx container
       - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
-      # This builds the MySQL connection string using variables from the .env file
-      - DATABASE_URL=mysql+pymysql://${DISPATCH_DB_USER}:${DISPATCH_DB_PASSWORD}@dispatch_db/${DISPATCH_DB_DATABASE}
-    networks:
-      - hpc_network
-    depends_on:
-      # This service must wait for its own database to be ready
-      dispatch_db:
-        condition: service_healthy
-
-  # NEW: A dedicated MySQL database container for the Dispatch Service
-  dispatch_db:
-    image: mysql:8.0
-    container_name: hpc_dispatch_db
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
-    env_file:
-      - .env # Load variables from the .env file
-    environment:
-      # Use the variables to configure the MySQL container
-      - MYSQL_DATABASE=${DISPATCH_DB_DATABASE}
-      - MYSQL_USER=${DISPATCH_DB_USER}
-      - MYSQL_PASSWORD=${DISPATCH_DB_PASSWORD}
-      - MYSQL_ROOT_PASSWORD=${DISPATCH_DB_ROOT_PASSWORD}
-    volumes:
-      # Give it its own persistent data volume
-      - dispatch_db_data:/var/lib/mysql
-    networks:
-      - hpc_network
-
-networks:
-  hpc_network:
-    # This still correctly connects to the external network created by the main compose file
-    external: true
-
-volumes:
-  # Define the volume for our new database
-  dispatch_db_data:
+      # Use SQLite as the database
+      - DATABASE_URL=sqlite:///./hpc_dispatch.db

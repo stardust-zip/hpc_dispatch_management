@@ -15,7 +15,7 @@ requests
 sqlalchemy
 sqlmodel
 uvicorn[standard]
-PyMySQL
+
 alembic
 cryptography
 
