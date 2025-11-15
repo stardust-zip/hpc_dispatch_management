@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import httpx  # <-- Import httpx
 
-
-from .. import crud, schemas, services
-from ..database import get_db
-from ..security import get_current_user
+from .. import crud, schemas, services, drive_service  # <-- Import drive_service
+from ..database import get_db, get_http_client  # <-- Import get_http_client
+from ..security import get_current_user, oauth2_scheme  # <-- Import oauth2_scheme
 
 router = APIRouter(
     prefix="/dispatches",
@@ -30,6 +30,7 @@ async def create_dispatch(
     return crud.create_dispatch(db=db, dispatch=dispatch, author_id=current_user.sub)
 
 
+# ... (keep read_dispatches, read_dispatch, update_dispatch, delete_dispatch as-is) ...
 @router.get("/", response_model=list[schemas.Dispatch])
 async def read_dispatches(
     skip: int = 0,
@@ -143,12 +144,17 @@ async def assign_dispatch(
     assignment: schemas.DispatchAssign,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
+    # --- ADD THESE DEPENDENCIES ---
+    token: str = Depends(oauth2_scheme),
+    client: httpx.AsyncClient = Depends(get_http_client),
+    # --------------------------------
 ):
     """
     Assign a DRAFT dispatch to users.
     - Only the author can assign a dispatch.
     - This changes the status from DRAFT to PENDING.
     - This sends a notification to each assignee.
+    - This organizes the file in the author's drive and shares it.
     """
     db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
     if not db_dispatch:
@@ -162,14 +168,25 @@ async def assign_dispatch(
             status_code=400, detail="Only draft dispatches can be assigned"
         )
 
-    # Sync assignees' user data from JWT if they don't exist in cache (hypothetically)
-    # In a real scenario, you'd probably need to fetch user details from the User service.
-    # For now, we assume they have interacted with the service before.
+    # ... (user sync logic removed for brevity, it's not needed here) ...
 
     try:
         assignees = crud.assign_dispatch_to_users(db, db_dispatch, assignment)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+    # --- ADD THIS CALL ---
+    # This will run in the background (fire and forget)
+    # It will move the sender's file to "Công văn đi"
+    # and share the file with all assignees.
+    try:
+        await drive_service.organize_dispatch_in_drive(
+            dispatch=db_dispatch, assignees=assignees, token=token, client=client
+        )
+    except Exception as e:
+        # Log the error but don't stop the dispatch from being sent
+        print(f"Failed to organize dispatch in drive: {e}")
+    # ---------------------
 
     # Send notifications to all assignees
     for assignee in assignees:

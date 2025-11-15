@@ -19,6 +19,14 @@ services:
       # Use SQLite as the database
       - DATABASE_URL=sqlite:///./hpc_dispatch.db
 
-      # --- ADD THIS LINE ---
-      # Override the URL to point to the host machine
       - HPC_USER_SERVICE_URL=http://host.docker.internal:8082/api/v1
+      - HPC_DRIVE_SERVICE_URL=http://hpc_drive_service:7777/api/v1/drive
+
+      # Connect this service to the same network as your drive service
+    networks:
+      - system-management_hpc_network
+
+# --- AND ADD THIS SECTION AT THE BOTTOM ---
+networks:
+  system-management_hpc_network:
+    external: true

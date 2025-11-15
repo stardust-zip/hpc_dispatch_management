@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     HPC_USER_SERVICE_URL: str = "http://localhost:8082/api/v1"
     MOCK_AUTH_ENABLED: bool = False
 
+    HPC_DRIVE_SERVICE_URL: str = "http://localhost:7777/api/v1/drive"
+
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
     # Pydantic v2 configuration
