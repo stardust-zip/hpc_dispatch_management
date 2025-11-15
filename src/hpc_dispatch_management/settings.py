@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "default-secret-key"
     JWT_ALGO: str = "HS256"
 
-    HPC_USER_SERVICE_URL: str = "httpL//localhost:8080/api/v1"
+    HPC_USER_SERVICE_URL: str = "http://localhost:8082/api/v1"
     MOCK_AUTH_ENABLED: bool = False
 
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]

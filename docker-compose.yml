@@ -18,3 +18,7 @@ services:
       - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
       # Use SQLite as the database
       - DATABASE_URL=sqlite:///./hpc_dispatch.db
+
+      # --- ADD THIS LINE ---
+      # Override the URL to point to the host machine
+      - HPC_USER_SERVICE_URL=http://host.docker.internal:8082/api/v1
