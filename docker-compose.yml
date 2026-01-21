@@ -11,8 +11,8 @@ services:
       - ./src:/app/src
       # Mount the local SQLite DB for development and persistence
       - ./hpc_dispatch.db:/app/hpc_dispatch.db
-    env_file:
-      - .env # Load variables from the .env file
+    # env_file:
+    #   - .env # Load variables from the .env file
     environment:
       # This URL correctly points to the User Service's Nginx container
       - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
@@ -26,7 +26,6 @@ services:
     networks:
       - system-management_hpc_network
 
-# --- AND ADD THIS SECTION AT THE BOTTOM ---
 networks:
   system-management_hpc_network:
     external: true
