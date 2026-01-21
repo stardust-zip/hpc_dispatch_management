@@ -1,13 +1,13 @@
+import logging
+from typing import Annotated
+
+import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from typing import Annotated
 from jose import JWTError, jwt
 from pydantic import ValidationError
 
-import httpx
-import logging
 from .database import get_http_client
-
 from .schemas import User, UserType
 from .settings import settings
 
@@ -101,6 +101,11 @@ async def get_current_user(
                 # Get class_id (for students) or department_id (for lecturers)
                 class_id = info_data.get("class", {}).get("id")
                 department_id = info_data.get("unit", {}).get("id")
+
+                raw_user_type = me_data.get("user_type", "")
+                user_type_str = (
+                    str(raw_user_type).lower() if raw_user_type else "student"
+                )
 
                 adapted_data = {
                     "sub": me_data.get("id"),

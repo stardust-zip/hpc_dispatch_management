@@ -1,18 +1,22 @@
+from datetime import datetime
+
 from sqlalchemy import (
-    Table,
     Column,
-    Integer,
-    String,
     DateTime,
     ForeignKey,
-    Enum as SAEnum,
+    Integer,
+    String,
+    Table,
     Text,
 )
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import (
+    Enum as SAEnum,
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+
 from .database import Base
 from .schemas import DispatchStatus, UserType
-from datetime import datetime
 
 dispatch_folder_association = Table(
     "dispatch_folder_association",
@@ -36,7 +40,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     full_name: Mapped[str] = mapped_column(String(255))
     user_type: Mapped[UserType] = mapped_column(SAEnum(UserType))
-    department_id: Mapped[int] = mapped_column(Integer)
+    department_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_admin: Mapped[bool] = mapped_column(default=False)
 
     folders: Mapped[list["Folder"]] = relationship(back_populates="owner")

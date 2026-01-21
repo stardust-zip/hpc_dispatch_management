@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr, HttpUrl, Field
-from typing import Literal
 from datetime import datetime
 from enum import Enum
+from typing import Literal
+
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
 # 0. Enums
 
@@ -29,7 +30,7 @@ class User(BaseModel):
     is_admin: bool
     email: EmailStr
     full_name: str
-    department_id: int
+    department_id: int | None = None
     class_id: int | None = None
 
 

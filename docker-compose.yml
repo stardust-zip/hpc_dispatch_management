@@ -9,20 +9,17 @@ services:
       - "8888:8888"
     volumes:
       - ./src:/app/src
-      # Mount the local SQLite DB for development and persistence
       - ./hpc_dispatch.db:/app/hpc_dispatch.db
     # env_file:
-    #   - .env # Load variables from the .env file
+    #   - .env
     environment:
-      # This URL correctly points to the User Service's Nginx container
       - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
-      # Use SQLite as the database
       - DATABASE_URL=sqlite:///./hpc_dispatch.db
 
-      - HPC_USER_SERVICE_URL=http://host.docker.internal:8082/api/v1
+      - HPC_USER_SERVICE_URL=http://hpc_web/api/v1
+
       - HPC_DRIVE_SERVICE_URL=http://hpc_drive_service:7777/api/v1/drive
 
-      # Connect this service to the same network as your drive service
     networks:
       - system-management_hpc_network
 
