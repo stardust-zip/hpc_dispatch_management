@@ -1,18 +1,28 @@
-from datetime import datetime
 from enum import Enum
-from typing import Literal
+from typing import Generic, Literal, TypeVar
 
-from pydantic import BaseModel, EmailStr, Field, HttpUrl
+from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, HttpUrl
+from pydantic.alias_generators import to_camel
+
+T = TypeVar("T")
+
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: list[T]
+    total: int
+    page: int
+    size: int
+
 
 # 0. Enums
 
 
 class DispatchStatus(str, Enum):
-    APPROVED = "Đã phê duyệt"
-    REJECTED = "Đã từ chối"
-    PENDING = "Chờ xử lý"
-    IN_PROGRESS = "Đang xử lý"
-    DRAFT = "Nháp"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    DRAFT = "draft"
 
 
 class UserType(str, Enum):
@@ -25,7 +35,7 @@ class UserType(str, Enum):
 
 class User(BaseModel):
     sub: int
-    user_type: Literal["lecturer", "student"]
+    user_type: UserType
     username: str
     is_admin: bool
     email: EmailStr
@@ -49,30 +59,34 @@ class UserInfo(BaseModel):
 class KafkaNewDispatchPayload(BaseModel):
     user_id: int
     user_type: UserType
-    documentTitle: str
-    documentUrl: HttpUrl
-    documentSerialNumber: str
-    assignerName: str
-    assigneeName: str
-    actionRequired: str
-    date: datetime
+    document_title: str
+    document_url: HttpUrl
+    document_serial_number: str
+    assigner_name: str
+    assignee_name: str
+    action_required: str
+    date: AwareDatetime
     sender_id: int
     sender_type: UserType
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class KafkaDispatchStatusUpdatePayload(BaseModel):
     user_id: int
     user_type: UserType
     subject: str
-    authorName: str
-    documentSerialNumber: str
-    documentTitle: str
-    reviewerName: str
+    author_name: str
+    document_serial_number: str
+    document_title: str
+    reviewer_name: str
     status: str
-    reviewComment: str | None = None
-    documentUrl: HttpUrl
+    review_comment: str | None = None
+    document_url: HttpUrl
     year: str
     app_name: str = "HPC Corp"
+
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
 
 class KafkaMessage(BaseModel):
@@ -110,8 +124,8 @@ class Dispatch(DispatchBase):
     id: int
     author_id: int
     status: DispatchStatus
-    created_at: datetime
-    updated_at: datetime | None = None
+    created_at: AwareDatetime
+    updated_at: AwareDatetime | None = None
     author: UserInfo
 
     class ConfigDict:
@@ -128,7 +142,7 @@ class DispatchTypeSearch(str, Enum):
 class DispatchAssign(BaseModel):
     """Schema for assigning a dispatch to users."""
 
-    assignee_usernames: list[str]
+    assignee_usernames: list[str] = Field(..., min_length=1)
     action_required: str = Field(..., max_length=500)
 
 

@@ -16,7 +16,7 @@ MOCK_USERS = {
     "lecturer1": User(
         sub=1,
         full_name="Mock Lecturer 1",
-        user_type="lecturer",
+        user_type=UserType.LECTURER,
         is_admin=False,
         username="lecturer1",
         email="l1@mock.com",
@@ -25,7 +25,7 @@ MOCK_USERS = {
     "admin": User(
         sub=2,
         full_name="Mock Admin",
-        user_type="lecturer",
+        user_type=UserType.LECTURER,
         is_admin=True,
         username="admin",
         email="admin@mock.com",
@@ -34,7 +34,7 @@ MOCK_USERS = {
     "student1": User(
         sub=3,
         full_name="Mock Student 1",
-        user_type="student",
+        user_type=UserType.STUDENT,
         is_admin=False,
         username="student1",
         email="s1@mock.com",

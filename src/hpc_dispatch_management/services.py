@@ -1,9 +1,10 @@
-import httpx
-from datetime import datetime
 import logging
+from datetime import datetime, timezone
+
+import httpx
 from pydantic import HttpUrl
 
-from . import schemas, models
+from . import models, schemas
 from .settings import settings
 
 # Configure logging
@@ -21,15 +22,15 @@ async def send_new_dispatch_notification(
     payload = schemas.KafkaNewDispatchPayload(
         user_id=assignee.id,
         user_type=assignee.user_type,
-        documentTitle=dispatch.title,
-        documentUrl=HttpUrl(str(dispatch.file_url))
+        document_title=dispatch.title,
+        document_url=HttpUrl(str(dispatch.file_url))
         if dispatch.file_url
         else HttpUrl("http://hpc-system.com/dispatch-not-found"),
-        documentSerialNumber=dispatch.serial_number,
-        assignerName=assigner.full_name,
-        assigneeName=assignee.full_name,
-        actionRequired=action_required,
-        date=datetime.now(),
+        document_serial_number=dispatch.serial_number,
+        assigner_name=assigner.full_name,
+        assignee_name=assignee.full_name,
+        action_required=action_required,
+        date=datetime.now(timezone.utc),
         sender_id=assigner.id,
         sender_type=assigner.user_type,
     )
@@ -55,13 +56,13 @@ async def send_status_update_notification(
         user_id=author.id,
         user_type=author.user_type,
         subject=f"Công văn '{dispatch.title}' đã được xử lý",
-        authorName=author.full_name,
-        documentSerialNumber=dispatch.serial_number,
-        documentTitle=dispatch.title,
-        reviewerName=reviewer.full_name,
+        author_name=author.full_name,
+        document_serial_number=dispatch.serial_number,
+        document_title=dispatch.title,
+        reviewer_name=reviewer.full_name,
         status=status.value,  # Send the Vietnamese string value
-        reviewComment=comment,
-        documentUrl=HttpUrl(str(dispatch.file_url))
+        review_comment=comment,
+        document_url=HttpUrl(str(dispatch.file_url))
         if dispatch.file_url
         else HttpUrl("http://hpc-system.com/dispatch-not-found"),
         year=str(dispatch.created_at.year),
