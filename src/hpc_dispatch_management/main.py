@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .database import create_db_and_tables
-from .routers import dispatches, folders
+from .routers import dispatches
 from .settings import settings
 
 logger = logging.getLogger(__name__)
@@ -70,7 +70,7 @@ app.add_middleware(
 
 
 app.include_router(dispatches.router)
-app.include_router(folders.router)
+# app.include_router(folders.router)
 
 
 @app.get("/debug-settings", tags=["Health Check"])

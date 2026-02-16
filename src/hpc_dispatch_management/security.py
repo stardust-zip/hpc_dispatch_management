@@ -1,12 +1,10 @@
 import logging
 from typing import Annotated
 
-import httpx
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 
-from .database import get_http_client
 from .schemas import User, UserType
 from .settings import settings
 

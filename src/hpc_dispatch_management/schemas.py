@@ -137,27 +137,3 @@ class DispatchStatusUpdate(BaseModel):
 
     status: Literal[DispatchStatus.APPROVED, DispatchStatus.REJECTED]
     review_comment: str | None = Field(None, max_length=1000)
-
-
-# 5. Folder Schemas
-
-
-class FolderBase(BaseModel):
-    name: str = Field(..., min_length=1, max_length=255)
-
-
-class FolderCreate(FolderBase):
-    pass
-
-
-class FolderUpdate(BaseModel):
-    name: str | None = Field(None, min_length=1, max_length=255)
-
-
-class Folder(FolderBase):
-    id: int
-    owner_id: int
-    dispatches: list[Dispatch] = []  # Return dispatches within the folder
-
-    class ConfigDict:
-        from_attributes = True

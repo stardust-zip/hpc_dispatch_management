@@ -1,6 +1,7 @@
-from sqlalchemy.orm import Session, joinedload
-from . import models, schemas
 from sqlalchemy import or_
+from sqlalchemy.orm import Session, joinedload
+
+from . import models, schemas
 
 # region User Cache Management
 
@@ -228,9 +229,9 @@ def get_folder(db: Session, folder_id: int) -> models.Folder | None:
     )
 
 
-def get_folders_by_owner(db: Session, owner_id: int) -> list[models.Folder]:
-    """Retrieves all folders for a specific user."""
-    return db.query(models.Folder).filter(models.Folder.owner_id == owner_id).all()
+# def get_folders_by_owner(db: Session, owner_id: int) -> list[models.Folder]:
+#     """Retrieves all folders for a specific user."""
+#     return db.query(models.Folder).filter(models.Folder.owner_id == owner_id).all()
 
 
 def create_folder(
