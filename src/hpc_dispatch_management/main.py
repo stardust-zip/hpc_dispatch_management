@@ -35,7 +35,11 @@ async def lifespan(app: FastAPI):
         logger.info(f"Connecting to User Service at: {settings.HPC_USER_SERVICE_URL}")
 
     # Call your original DB creation function
-    create_db_and_tables()
+    if settings.APP_ENV == "local":
+        print("Using local development, creating tables now!")
+        create_db_and_tables()
+    elif settings.APP_ENV == "production":
+        print("Skipped local development settings")
 
     client = httpx.AsyncClient()
     logger.info("Startup complete.")

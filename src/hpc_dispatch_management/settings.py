@@ -3,17 +3,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    APP_ENV: str
+
     LOG_LEVEL: str = Field(
         default="INFO",
         description="Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL",
     )
 
-    DATABASE_URL: str = "sqlite:///./hpc_dispatch.db"
+    DATABASE_URL: str
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
     JWT_SECRET: str
-    JWT_ALGO: str = "HS256"
-    MOCK_AUTH_ENABLED: bool = False
+    JWT_ALGO: str
+    MOCK_AUTH_ENABLED: bool
 
     NOTIFICATION_SERVICE_URL: HttpUrl
     HPC_USER_SERVICE_URL: HttpUrl
