@@ -1,8 +1,13 @@
+import httpx  # <-- Import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import httpx  # <-- Import httpx
 
-from .. import crud, schemas, services, drive_service  # <-- Import drive_service
+from .. import (  # <-- Import drive_service
+    crud,
+    drive_service,
+    notification_service,
+    schemas,
+)
 from ..database import get_db, get_http_client  # <-- Import get_http_client
 from ..security import get_current_user, oauth2_scheme  # <-- Import oauth2_scheme
 
@@ -190,7 +195,7 @@ async def assign_dispatch(
 
     # Send notifications to all assignees
     for assignee in assignees:
-        await services.send_new_dispatch_notification(
+        await notification_service.send_new_dispatch_notification(
             dispatch=db_dispatch,
             assigner=db_dispatch.author,
             assignee=assignee,
@@ -240,7 +245,7 @@ async def update_dispatch_status(
         )
 
     # Send notification back to the author
-    await services.send_status_update_notification(
+    await notification_service.send_status_update_notification(
         dispatch=db_dispatch,
         reviewer=reviewer,  # Pass the validated reviewer
         status=status_update.status,

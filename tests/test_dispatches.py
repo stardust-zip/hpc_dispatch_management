@@ -4,10 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-
-from hpc_dispatch_management.main import app
-from hpc_dispatch_management.database import Base, get_db
 from hpc_dispatch_management import crud, schemas
+from hpc_dispatch_management.database import Base, get_db
+from hpc_dispatch_management.main import app
 
 # --- Test Database Setup ---
 # Use an in-memory SQLite database for testing
@@ -234,7 +233,7 @@ def test_delete_draft_by_owner(db_session):
 def test_assign_dispatch_and_send_notification(db_session, mocker):
     # Mock the notification service function
     mock_send_noti = mocker.patch(
-        "hpc_dispatch_management.services.send_new_dispatch_notification"
+        "hpc_dispatch_management.notification_service.send_new_dispatch_notification"
     )
 
     # Create a dispatch as the lecturer (user 1)
