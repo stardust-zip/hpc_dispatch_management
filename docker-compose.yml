@@ -20,6 +20,15 @@ services:
     image: mysql:8.0
     container_name: hpc_dispatch_db_dev
     restart: unless-stopped
+    command:
+      - --innodb-buffer-pool-size=1G
+      - --innodb-buffer-pool-instances=2
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-io-capacity=1000
+    deploy:
+      resources:
+        limits:
+          memory: 768M
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: dispatch_dev
