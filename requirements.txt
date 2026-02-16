@@ -17,6 +17,7 @@ sqlmodel
 uvicorn[standard]
 
 alembic
+pymysql
 cryptography
 
 # Development & Testing Dependencies

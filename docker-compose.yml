@@ -1,28 +1,55 @@
 services:
-  dispatch_service:
+  dispatch_services:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: hpc_dispatch_service
-    restart: unless-stopped
+    restart: unles-stopped
     ports:
-      - "8888:8888"
+      - 8888:8888
     volumes:
-      - ./src:/app/src
-      - ./hpc_dispatch.db:/app/hpc_dispatch.db
-    # env_file:
-    #   - .env
+      - .src:/app/src
+    env_file:
+      - .env
+    depends_on:
+      dispatch_dev_dev:
+        condition: service_healthy
+
+  dispatch_db_dev:
+    image: mysql:8.0
+    container_name: hpc_dispatch_db_dev
+    restart: unless-stopped
     environment:
-      - NOTIFICATION_SERVICE_URL=http://hpc_web/api/v1/events/publish
-      - DATABASE_URL=sqlite:///./hpc_dispatch.db
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dispatch_dev
+      MYSQL_USER: dev_user
+      MYSQL_PASSWORD: dev_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - dispatch_dev_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
-      - HPC_USER_SERVICE_URL=http://hpc_web/api/v1
+  dispatch_db_test:
+    image: mysql:8.0
+    container_name: hpc_dispatch_db_test
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dispatch_test
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: test_password
+    ports:
+      - "3309:3306"
+    tmpfs: # Use this to run DB in memory for faster test
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
-      - HPC_DRIVE_SERVICE_URL=http://hpc_drive_service:7777/api/v1/drive
-
-    networks:
-      - system-management_hpc_network
-
-networks:
-  system-management_hpc_network:
-    external: true
+volumes:
+  dispatch_dev_data:
