@@ -79,26 +79,20 @@ async def debug_settings():
     Temporary endpoint to verify environment variables are loaded.
     Check the container logs after calling this.
     """
-    masked_secret = (
-        f"{settings.JWT_SECRET[:5]}***" if len(settings.JWT_SECRET) > 5 else "***"
-    )
-
-    logger.info("---DEBUG SETTINGS CHECK---")
-    logger.info(
-        "MOCK AUTHENTICATION ENABLED"
-        if settings.MOCK_AUTH_ENABLED
-        else "MOCK AUTHENTICATION DISBALED"
-    )
-    logger.info(f"LOG LEVEL: ${settings.LOG_LEVEL}")
-    logger.info(f"JWT SECRET: ${masked_secret}")
-    logger.info(f"JWT ALGO: ${settings.JWT_ALGO}")
-    logger.info(f"HPC_USER_SERVICE_URL: ${settings.HPC_USER_SERVICE_URL}")
-    logger.info(f"NOTIFICATION_SERVICE_URL: ${settings.NOTIFICATION_SERVICE_URL}")
-    logger.info(f"HPC_DRIVE_SERVICE_URL: ${settings.HPC_DRIVE_SERVICE_URL}")
-
-    return {
-        "message": "Please run docker compose logs -f hpc_dispatch_servic to check the info"
-    }
+    if settings.APP_ENV == "local":
+        mock_authentication_enabled = True if settings.MOCK_AUTH_ENABLED else False
+        return {
+            "MOCK_AUTHENTICATION": mock_authentication_enabled,
+            "APP_ENV": f"{settings.APP_ENV}",
+            "LOG_LEVEL": f"{settings.LOG_LEVEL}",
+            "JWT_SECRET": f"{settings.JWT_SECRET}",
+            "JWT_ALGO": f"{settings.JWT_ALGO}",
+            "HPC_USER_SERVICE_URL": f"{settings.HPC_USER_SERVICE_URL}",
+            "HPC_DRIVE_SERVICE_URL": f"{settings.HPC_DRIVE_SERVICE_URL}",
+            "NOTIFICATION_SERVICE_URL": f"{settings.NOTIFICATION_SERVICE_URL}",
+        }
+    else:
+        return {"message": "Debug enpoint disabled for safety."}
 
 
 @app.get("/", tags=["Health Check"])
