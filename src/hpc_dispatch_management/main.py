@@ -5,7 +5,7 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_db_and_tables, http_client_store
+from .database import create_db_and_tables
 from .routers import dispatches, folders
 from .settings import settings
 
@@ -29,12 +29,14 @@ async def lifespan(app: FastAPI):
     # Call your original DB creation function
     create_db_and_tables()
 
-    http_client_store["client"] = httpx.AsyncClient()
+    client = httpx.AsyncClient()
     logger.info("Startup complete.")
-    yield
+
+    yield {"http_client": client}
+
     # Shutdown
     logger.info("Application shutting down...")
-    await http_client_store["client"].aclose()
+    await client.aclose()
     logger.info("Shutdown complete.")
 
 
