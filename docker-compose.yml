@@ -4,15 +4,15 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: hpc_dispatch_service
-    restart: unles-stopped
+    restart: unless-stopped
     ports:
-      - 8888:8888
+      - "8888:8888"
     volumes:
-      - .src:/app/src
+      - ./src:/app/src
     env_file:
       - .env
     depends_on:
-      dispatch_dev_dev:
+      dispatch_db_dev:
         condition: service_healthy
 
   dispatch_db_dev:
