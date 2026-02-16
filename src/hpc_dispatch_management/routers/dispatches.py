@@ -1,15 +1,19 @@
-import httpx  # <-- Import httpx
+import logging
+
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .. import (  # <-- Import drive_service
+from .. import (
     crud,
     drive_service,
     notification_service,
     schemas,
 )
-from ..database import get_db, get_http_client  # <-- Import get_http_client
-from ..security import get_current_user, oauth2_scheme  # <-- Import oauth2_scheme
+from ..database import get_db, get_http_client
+from ..security import get_current_user, oauth2_scheme
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/dispatches",
@@ -190,7 +194,7 @@ async def assign_dispatch(
         )
     except Exception as e:
         # Log the error but don't stop the dispatch from being sent
-        print(f"Failed to organize dispatch in drive: {e}")
+        logger.exception(f"Failed to organize dispatch in drive: {e}")
     # ---------------------
 
     # Send notifications to all assignees

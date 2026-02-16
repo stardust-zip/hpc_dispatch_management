@@ -1,7 +1,9 @@
-import httpx
 import logging
 import uuid
-from . import models, schemas
+
+import httpx
+
+from . import models
 from .settings import settings
 
 logging.basicConfig(level=logging.INFO)

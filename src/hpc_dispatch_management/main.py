@@ -36,10 +36,10 @@ async def lifespan(app: FastAPI):
 
     # Call your original DB creation function
     if settings.APP_ENV == "local":
-        print("Using local development, creating tables now!")
+        logger.info("Using local development, creating tables now!")
         create_db_and_tables()
     elif settings.APP_ENV == "production":
-        print("Skipped local development settings")
+        logger.info("Skipped local development settings")
 
     client = httpx.AsyncClient()
     logger.info("Startup complete.")

@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 
 import httpx
@@ -7,8 +8,10 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .settings import settings
 
+logger = logging.getLogger(__name__)
+
 SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
-print(f"Connection to database: {SQLALCHEMY_DATABASE_URL}")
+logger.info(f"Connection to database: {SQLALCHEMY_DATABASE_URL}")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -46,5 +49,5 @@ def create_db_and_tables():
     If using Albemic migration in production, remove this.
     For local dev, this ensure tables are created in MySQL
     """
-    print("Ensure MySQL db exists...")
+    logger.info("Ensure MySQL db exists...")
     Base.metadata.create_all(bind=engine)
