@@ -9,7 +9,6 @@ from .database import create_db_and_tables
 from .routers import dispatches, folders
 from .settings import settings
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -19,6 +18,11 @@ async def lifespan(app: FastAPI):
     Manage application startup and shutdown events.
     Handles DB creation and shared HTTP client.
     """
+    # Configure logging ONLY when the app start
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s: %(name)s - %(message)s"
+    )
+
     # Startup
     logger.info("Application starting up...")
     if settings.MOCK_AUTH_ENABLED:

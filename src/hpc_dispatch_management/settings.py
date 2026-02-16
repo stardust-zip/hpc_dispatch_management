@@ -1,26 +1,23 @@
+from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # This will automatically look for an environment variable named
-    # NOTIFICATION_SERVICE_URL.
-    # The default value is set for local development.
-    NOTIFICATION_SERVICE_URL: str = "http://localhost:8080/api/v1/events/publish"
+    LOG_LEVEL: str = Field(
+        default="INFO",
+        description="Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL",
+    )
 
-    # DATABSE URL CONFIGURATION (DB/TEST/PROD)
-    # It will look for DATABASE_URL environment variable.
-    # If it's not found, it defaults to SQLite db for local development.
     DATABASE_URL: str = "sqlite:///./hpc_dispatch.db"
+    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
 
-    JWT_SECRET: str = "default-secret-key"
+    JWT_SECRET: str
     JWT_ALGO: str = "HS256"
-
-    HPC_USER_SERVICE_URL: str = "http://localhost:8082/api/v1"
     MOCK_AUTH_ENABLED: bool = False
 
-    HPC_DRIVE_SERVICE_URL: str = "http://localhost:7777/api/v1/drive"
-
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    NOTIFICATION_SERVICE_URL: HttpUrl
+    HPC_USER_SERVICE_URL: HttpUrl
+    HPC_DRIVE_SERVICE_URL: HttpUrl
 
     # Pydantic v2 configuration
     model_config = SettingsConfigDict(
@@ -28,5 +25,4 @@ class Settings(BaseSettings):
     )
 
 
-# Create a single, reusable instance of the settings
 settings = Settings()
