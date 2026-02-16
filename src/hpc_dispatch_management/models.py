@@ -50,7 +50,7 @@ class Dispatch(Base):
 
     __tablename__: str = "dispatches"
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    id: Mapped[int] = mapped_column(primary_key=True)
     serial_number: Mapped[str] = mapped_column(String(100), unique=True)
     title: Mapped[str] = mapped_column(String(255))
 
@@ -88,8 +88,8 @@ class DispatchAssignment(Base):
     """
 
     __tablename__: str = "dispatch_assignments"
-    __table_args__: UniqueConstraint = UniqueConstraint(
-        "dispatch_id", "assignee_id", name="uix_dispatch_assignee"
+    __table_args__ = (
+        UniqueConstraint("dispatch_id", "assignee_id", name="uix_dispatch_assignee"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)

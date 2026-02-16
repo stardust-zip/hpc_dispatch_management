@@ -1,8 +1,10 @@
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Generic, Literal, TypeVar
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, EmailStr, Field, HttpUrl
 from pydantic.alias_generators import to_camel
+from pydantic.functional_validators import field_validator
 
 T = TypeVar("T")
 
@@ -127,6 +129,13 @@ class Dispatch(DispatchBase):
     created_at: AwareDatetime
     updated_at: AwareDatetime | None = None
     author: UserInfo
+
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def ensure_timezone_aware(cls, v: datetime | None) -> datetime | None:
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
 
     class ConfigDict:
         from_attributes: bool = True

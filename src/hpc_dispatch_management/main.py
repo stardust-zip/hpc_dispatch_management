@@ -96,6 +96,10 @@ async def debug_settings():
     logger.info(f"NOTIFICATION_SERVICE_URL: ${settings.NOTIFICATION_SERVICE_URL}")
     logger.info(f"HPC_DRIVE_SERVICE_URL: ${settings.HPC_DRIVE_SERVICE_URL}")
 
+    return {
+        "message": "Please run docker compose logs -f hpc_dispatch_servic to check the info"
+    }
+
 
 @app.get("/", tags=["Health Check"])
 async def read_root():
