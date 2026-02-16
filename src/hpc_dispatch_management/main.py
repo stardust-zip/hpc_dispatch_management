@@ -18,9 +18,13 @@ async def lifespan(app: FastAPI):
     Manage application startup and shutdown events.
     Handles DB creation and shared HTTP client.
     """
-    # Configure logging ONLY when the app start
+
+    # Dynamically read the log level from settings and convert to logging integer
+    numeric_level = getattr(logging, settings.LOG_LEVEL.upper(), logging.INFO)
+
+    # Configure logging ONLY when the app start using dynamic level
     logging.basicConfig(
-        level=logging.INFO, format="%(levelname)s: %(name)s - %(message)s"
+        level=numeric_level, format="%(levelname)s: %(name)s - %(message)s"
     )
 
     # Startup
@@ -71,18 +75,22 @@ async def debug_settings():
     Temporary endpoint to verify environment variables are loaded.
     Check the container logs after calling this.
     """
-    # This will print to your docker compose logs, NOT to the user.
-    # This is a safe way to debug.
-    print("--- DEBUG SETTINGS CHECK ---")
-    print(f"RUNNING WITH SECRET: '{settings.JWT_SECRET}'")
-    print(f"RUNNING WITH ALGO:   '{settings.JWT_ALGO}'")
-    print(f"USER SERVICE URL:  '{settings.HPC_USER_SERVICE_URL}'")
-    print(f"MOCK AUTH ENABLED: '{settings.MOCK_AUTH_ENABLED}'")
-    print("----------------------------")
-    return {
-        "message": "Settings have been printed to container logs. Please check them.",
-        "loaded_algo": settings.JWT_ALGO,
-    }
+    masked_secret = (
+        f"{settings.JWT_SECRET[:5]}***" if len(settings.JWT_SECRET) > 5 else "***"
+    )
+
+    logger.info("---DEBUG SETTINGS CHECK---")
+    logger.info(
+        "MOCK AUTHENTICATION ENABLED"
+        if settings.MOCK_AUTH_ENABLED
+        else "MOCK AUTHENTICATION DISBALED"
+    )
+    logger.info(f"LOG LEVEL: ${settings.LOG_LEVEL}")
+    logger.info(f"JWT SECRET: ${masked_secret}")
+    logger.info(f"JWT ALGO: ${settings.JWT_ALGO}")
+    logger.info(f"HPC_USER_SERVICE_URL: ${settings.HPC_USER_SERVICE_URL}")
+    logger.info(f"NOTIFICATION_SERVICE_URL: ${settings.NOTIFICATION_SERVICE_URL}")
+    logger.info(f"HPC_DRIVE_SERVICE_URL: ${settings.HPC_DRIVE_SERVICE_URL}")
 
 
 @app.get("/", tags=["Health Check"])
