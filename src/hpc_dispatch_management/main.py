@@ -1,12 +1,13 @@
-from fastapi import FastAPI
-from .routers import dispatches, folders
-from fastapi.middleware.cors import CORSMiddleware
-from .settings import settings
-
-import httpx
 import logging
 from contextlib import asynccontextmanager
-from .database import http_client_store, create_db_and_tables
+
+import httpx
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from .database import create_db_and_tables, http_client_store
+from .routers import dispatches, folders
+from .settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -82,15 +83,10 @@ async def debug_settings():
 async def read_root():
     """
     Root endpoint for health check.
-    Even if your health already sucked 😔.
     """
     return {
         "status": "ok",
         "service": "HPC Dispatch Management",
-        "mind": "controlled",
-        "life": "failed",
-        "solulu": "delulu",
-        "faith": False,
     }
 
 
