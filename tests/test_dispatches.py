@@ -38,23 +38,23 @@ def sample_dispatches(auth_client: TestClient) -> list[Response]:
 
 
 def test_get_all_dispatch(auth_client: TestClient, sample_dispatches: list[Response]):
-    _ = sample_dispatches  # to ignore type hint warning
     response = auth_client.get("/dispatches/")
 
     assert response.status_code == 200
-    assert response.json()[0]["title"] == "Test Dispatch #1"
-    assert response.json()[1]["title"] == "Test Dispatch #2"
+    assert response.json()[0]["title"] == sample_dispatches[0].json()["title"]
+    assert response.json()[1]["title"] == sample_dispatches[1].json()["title"]
 
 
 def test_get_individual_dispatch(
     auth_client: TestClient, sample_dispatches: list[Response]
 ):
-    dispatch_id = Dispatch.model_validate(sample_dispatches[0].json()).id
+    dispatch = Dispatch.model_validate(sample_dispatches[0].json())
+    dispatch_id = dispatch.id
 
     response = auth_client.get(f"/dispatches/{dispatch_id}")
 
     assert response.status_code == 200
-    assert response.json()["title"] == "Test Dispatch #1"
+    assert response.json()["title"] == dispatch.title
 
 
 def test_create_dispatch(auth_client: TestClient):
@@ -87,16 +87,16 @@ def test_create_dispatch_failed(auth_client: TestClient):
 def test_update_dispatch_title(
     auth_client: TestClient, sample_dispatches: list[Response]
 ):
-    dispatch_id = Dispatch.model_validate(sample_dispatches[0].json()).id
-    print(dispatch_id)
+    dispatch = Dispatch.model_validate(sample_dispatches[0].json())
 
     response = auth_client.put(
-        f"/dispatches/{dispatch_id}",
+        f"/dispatches/{dispatch.id}",
         json={"title": "Updated Title"},
     )
 
     assert response.status_code == 200
     assert response.json()["title"] == "Updated Title"
+    assert response.json()["serial_number"] == "TEST-001"
 
 
 def test_delete_dispatch(auth_client: TestClient, sample_dispatches: list[Response]):
