@@ -1,3 +1,9 @@
+import os
+
+os.environ["DATABASE_URL"] = (
+    "mysql+pymysql://test_user:test_password@localhost:3309/dispatch_test"
+)
+
 from collections.abc import Generator
 
 import pytest
@@ -37,27 +43,24 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
     app.dependency_overrides[get_db] = override_get_db
 
-    yield TestClient(app)
+    with TestClient(app) as test_client:
+        yield test_client
     app.dependency_overrides.clear()
 
 
 @pytest.fixture(scope="function")
-def auth_client(client: TestClient) -> Generator[TestClient, None, None]:
-    user = User(
-        sub=1,
-        full_name="Mock Admin",
-        user_type=UserType.LECTURER,
-        is_admin=True,
-        username="admin",
-        email="admin@mock.com",
-        department_id=1,
-    )
-
-    def override_get_current_user():
-        return user
-
-    app.dependency_overrides[get_current_user] = override_get_current_user
-
+def admin_auth_client(client: TestClient) -> Generator[TestClient, None, None]:
+    client.headers.update({"Authorization": "Bearer admin"})
     yield client
 
-    del app.dependency_overrides[get_current_user]
+
+@pytest.fixture(scope="function")
+def lecturer1_auth_client(client: TestClient) -> Generator[TestClient, None, None]:
+    client.headers.update({"Authorization": "Bearer lecturer1"})
+    yield client
+
+
+@pytest.fixture(scope="function")
+def lecturer2_auth_client(client: TestClient) -> Generator[TestClient, None, None]:
+    client.headers.update({"Authorization": "Bearer lecturer2"})
+    yield client

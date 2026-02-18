@@ -88,6 +88,7 @@
               cryptography
 
               httpx
+              python-http-client
               sqlmodel
 
               sqlalchemy

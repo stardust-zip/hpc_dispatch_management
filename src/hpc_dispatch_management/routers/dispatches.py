@@ -1,4 +1,5 @@
 import logging
+from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,8 +27,8 @@ router = APIRouter(
 @router.post("/", response_model=schemas.Dispatch, status_code=status.HTTP_201_CREATED)
 async def create_dispatch(
     dispatch: schemas.DispatchCreate,
-    db: Session = Depends(get_db),
-    current_user: schemas.User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
 ):
     """
     Create a new dispatch.
@@ -39,16 +40,15 @@ async def create_dispatch(
     return crud.create_dispatch(db=db, dispatch=dispatch, author_id=current_user.sub)
 
 
-# ... (keep read_dispatches, read_dispatch, update_dispatch, delete_dispatch as-is) ...
 @router.get("/", response_model=list[schemas.Dispatch])
 async def read_dispatches(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
     skip: int = 0,
     limit: int = 100,
     status: schemas.DispatchStatus | None = None,
     dispatch_type: schemas.DispatchTypeSearch = schemas.DispatchTypeSearch.ALL,
     search: str | None = None,
-    db: Session = Depends(get_db),
-    current_user: schemas.User = Depends(get_current_user),
 ):
     """
     Retrieve a list of dispatches with advanced filtering:
@@ -69,7 +69,7 @@ async def read_dispatches(
 
 
 @router.get("/{dispatch_id}", response_model=schemas.Dispatch)
-async def read_dispatch(dispatch_id: int, db: Session = Depends(get_db)):
+async def read_dispatch(dispatch_id: int, db: Annotated[Session, Depends(get_db)]):
     """
     Retrieve a single dispatch by its ID.
     """
@@ -83,8 +83,8 @@ async def read_dispatch(dispatch_id: int, db: Session = Depends(get_db)):
 async def update_dispatch(
     dispatch_id: int,
     dispatch_update: schemas.DispatchUpdate,
-    db: Session = Depends(get_db),
-    current_user: schemas.User = Depends(get_current_user),
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[schemas.User, Depends(get_current_user)],
 ):
     """
     Update a dispatch.
