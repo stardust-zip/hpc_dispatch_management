@@ -36,12 +36,15 @@ class UserType(str, Enum):
 
 
 class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     sub: int
+    full_name: str
     user_type: UserType
     username: str
-    is_admin: bool
-    email: EmailStr
-    full_name: str
+    email: str
+
+    is_admin: bool = Field(default=False)
     department_id: int | None = None
     class_id: int | None = None
 
