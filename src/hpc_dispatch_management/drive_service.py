@@ -4,12 +4,14 @@ import uuid
 import httpx
 
 from . import models
+from .schemas import DispatchStatus
 from .settings import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 FOLDER_OUTGOING = "Công văn đi"
+FOLDER_DRAFT = "Công văn nháp"
 # Note: "Công văn đến" must be handled by the recipient's client,
 # as the sender cannot write to the recipient's drive.
 
@@ -27,7 +29,9 @@ def _extract_item_id_from_url(file_url: str | None) -> str | None:
     if not file_url:
         return None
     try:
-        return str(uuid.UUID(file_url.split("/")[-1]))
+        # Strip trailing slashes just in case, then split
+        item_id_str = file_url.rstrip("/").split("/")[-1]
+        return str(uuid.UUID(item_id_str))
     except (ValueError, IndexError):
         logger.warning(f"Could not parse item_id from URL: {file_url}")
         return None
@@ -93,6 +97,7 @@ async def _move_item_to_folder(
     update_payload = {"parent_id": folder_id}
 
     try:
+        # HPC Drive uses PATCH for updates
         response = await client.patch(
             f"{drive_url}/items/{item_id}", headers=headers, json=update_payload
         )
@@ -138,8 +143,8 @@ async def organize_dispatch_in_drive(
 ):
     """
     Main service function to organize a dispatch in the drive.
-    1. Moves the sender's file to "Công văn đi".
-    2. Shares the file with all assignees.
+    1. Moves the sender's file to "Công văn đi" OR "Công văn nháp" based on status.
+    2. Shares the file with all assignees (if not a draft).
     """
     item_id = _extract_item_id_from_url(dispatch.file_url)
     if not item_id:
@@ -148,14 +153,21 @@ async def organize_dispatch_in_drive(
         )
         return
 
-    # --- 1. Sender's Action: Move to "Công văn đi" ---
-    folder_id = await _get_or_create_folder(FOLDER_OUTGOING, token, client)
+    # --- 1. Sender's Action: Move to appropriate folder ---
+    # Determine the target folder based on the dispatch status
+    target_folder = (
+        FOLDER_DRAFT if dispatch.status == DispatchStatus.DRAFT else FOLDER_OUTGOING
+    )
+
+    folder_id = await _get_or_create_folder(target_folder, token, client)
     if folder_id:
         await _move_item_to_folder(item_id, folder_id, token, client)
 
     # --- 2. Recipient's Action: Share with assignees ---
-    for assignee in assignees:
-        if assignee.id == dispatch.author_id:
-            continue  # Don't share with yourself
+    # We only share the document if it's an actual sent dispatch (not a draft)
+    if dispatch.status != DispatchStatus.DRAFT:
+        for assignee in assignees:
+            if assignee.id == dispatch.author_id:
+                continue  # Don't share with yourself
 
-        await _share_item_with_user(item_id, assignee.username, token, client)
+            await _share_item_with_user(item_id, assignee.username, token, client)
