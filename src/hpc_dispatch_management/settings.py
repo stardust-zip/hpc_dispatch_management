@@ -11,7 +11,12 @@ class Settings(BaseSettings):
     )
 
     DATABASE_URL: str
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://103.126.161.228:3001",
+        "http://103.126.161.228",
+    ]
 
     JWT_SECRET: str
     JWT_ALGO: str
