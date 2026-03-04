@@ -16,6 +16,8 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         "http://103.126.161.228:3001",
         "http://103.126.161.228",
+        "http://hethongdientu.khoacongnghethongtinhpc.io.vn",
+        "https://hethongdientu.khoacongnghethongtinhpc.io.vn",
     ]
 
     JWT_SECRET: str
