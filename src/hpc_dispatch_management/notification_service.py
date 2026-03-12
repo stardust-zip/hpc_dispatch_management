@@ -79,7 +79,7 @@ async def send_status_update_notification(
 
 async def _publish_to_kafka_gateway(message: schemas.KafkaMessage):
     """Sends the formatted message to the notification gateway service."""
-    url = settings.NOTIFICATION_SERVICE_URL
+    url = str(settings.NOTIFICATION_SERVICE_URL)
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(url, json=message.model_dump(mode="json"))
