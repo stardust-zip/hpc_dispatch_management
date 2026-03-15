@@ -77,39 +77,32 @@
               pip
               python-lsp-server
 
-              pytest
-              requests
-              fastapi
-              pytest
-              uvicorn
-              pytest-mock
-              pymysql
-              alembic
-              cryptography
+              pytest # Framework for writing tests
+              requests # HTTP library for Python
+              fastapi # Web framework for building APIs
+              uvicorn # Lightning-fast ASGI server
+              pytest-mock # Thin wrapper around the mock package for easier use with pytest
+              pymysql # Pure Python MySQL client
+              alembic # Database migration tool for SQLAlchemy
+              cryptography # Package which provides cryptographic recipes and primitives
 
-              httpx
-              python-http-client
-              sqlmodel
+              httpx # Next generation HTTP client
+              python-http-client # Python HTTP library to call APIs
+              sqlmodel # Module to work with SQL databases
 
-              sqlalchemy
-              python-dotenv
-              python-jose
-              alembic
-              pydantic
-              pydantic-settings
-              email-validator
-              passlib
-              bcrypt
-              python-multipart
-              jwt
-              pyjwt
+              sqlalchemy # Python SQL toolkit and Object Relationa Mapper
+              python-dotenv # Add .env support to your django/flask apps in development and deployments
+              python-jose # JOSE implementation in Pyhthon
+              pydantic # Data validation and settings management using Python type hinting
+              pydantic-settings # Settings management using pydantic
+              email-validator # Perform basic syntax and deliverablity checks on email addresses
+              bcrypt # Modern password hasing for your software and your servers
+              python-multipart # Streaming multipart parser for Python
+              jwt # Super fast CLI tool to decode and encode JWTs
+              pyjwt # JSON Web Token implementation in Python
 
               # Add whatever else you'd like here.
               pkgs.basedpyright
-
-              pkgs.sqlite
-              pkgs.sqlite-web
-
               # pkgs.black
               # or
               python.pkgs.black

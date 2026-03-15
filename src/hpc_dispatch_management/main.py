@@ -81,16 +81,7 @@ async def debug_settings():
     """
     if settings.APP_ENV == "local":
         mock_authentication_enabled = True if settings.MOCK_AUTH_ENABLED else False
-        return {
-            "MOCK_AUTHENTICATION": mock_authentication_enabled,
-            "APP_ENV": f"{settings.APP_ENV}",
-            "LOG_LEVEL": f"{settings.LOG_LEVEL}",
-            "JWT_SECRET": f"{settings.JWT_SECRET}",
-            "JWT_ALGO": f"{settings.JWT_ALGO}",
-            "HPC_USER_SERVICE_URL": f"{settings.HPC_USER_SERVICE_URL}",
-            "HPC_DRIVE_SERVICE_URL": f"{settings.HPC_DRIVE_SERVICE_URL}",
-            "NOTIFICATION_SERVICE_URL": f"{settings.NOTIFICATION_SERVICE_URL}",
-        }
+        return {"msg": "Nothing"}
     else:
         return {"message": "Debug enpoint disabled for safety."}
 
