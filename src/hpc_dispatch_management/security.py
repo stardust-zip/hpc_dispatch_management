@@ -1,4 +1,3 @@
-import logging
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
@@ -8,40 +7,15 @@ from jose import JWTError, jwt
 from .schemas import User, UserType
 from .settings import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-logger = logging.getLogger(__name__)
-
-MOCK_USERS = {
-    "lecturer1": User(
-        sub=1,
-        full_name="Mock Lecturer 1",
-        user_type=UserType.LECTURER,
-        is_admin=False,
-        username="lecturer1",
-        email="l1@mock.com",
-        department_id=1,
-    ),
-    "admin": User(
-        sub=2,
-        full_name="Mock Admin",
-        user_type=UserType.LECTURER,
-        is_admin=True,
-        username="admin",
-        email="admin@mock.com",
-        department_id=1,
-    ),
-    "student1": User(
-        sub=3,
-        full_name="Mock Student 1",
-        user_type=UserType.STUDENT,
-        is_admin=False,
-        username="student1",
-        email="s1@mock.com",
-        department_id=1,
-        class_id=10,
-    ),
-}
+# Tells FastAPI to look for an Authorization header in incoming HTTP requests,
+# specifically expecting the format Bearer <token>
+# Since I don't have /token endpoint becuase System-Management handles login
+# , the Authorize button in /docs Swagger UI will fail with a 404 error when
+# dev try to login
+# By that, we point tokenUrl directly to System-Management's login endpoint.
+# Ack, wait, i'm not changning SysMa code.
+# just get the jwt from curl and paste it when authorize
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
 
 
 async def get_current_user(
@@ -50,24 +24,7 @@ async def get_current_user(
     """
     Dependency to get the current user from a JWT token.
     Enforces the rule that ONLY Lecturers or Admins can access.
-
-    This version calls the User Service /me endpoint to validate the token.
     """
-
-    if settings.MOCK_AUTH_ENABLED:
-        user = MOCK_USERS.get(token)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=f"Invalid mock user token. Valid are: {list(MOCK_USERS.keys())}",
-            )
-
-        if user.user_type == UserType.STUDENT:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied. Only lecturers and admins can use this service.",
-            )
-        return user
 
     try:
         payload = jwt.decode(

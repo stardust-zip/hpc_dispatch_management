@@ -36,14 +36,11 @@ async def lifespan(_app: FastAPI):  # adding _ so basedpyright be silient
     # Set standard formatting string for all logs output
     logging.basicConfig(
         level=numeric_level, format="%(levelname)s: %(name)s - %(message)s"
-    )
+    )  # This settings is used across all logger across all files
 
     # Startup
     logger.info("Application starting up...")
-    if settings.MOCK_AUTH_ENABLED:
-        logger.warning("!!! MOCK AUTHENTICATION IS ENABLED !!!")
-    else:
-        logger.info(f"Connecting to User Service at: {settings.HPC_USER_SERVICE_URL}")
+    logger.info(f"Connecting to User Service at: {settings.HPC_USER_SERVICE_URL}")
 
     # Call your original DB creation function
     if settings.APP_ENV == "local":
@@ -90,20 +87,6 @@ app.add_middleware(
 
 app.include_router(dispatches.router)
 # app.include_router(folders.router)
-
-
-@app.get("/debug-settings", tags=["Health Check"])
-async def debug_settings():
-    """
-    Temporary endpoint to verify environment variables are loaded.
-    Check the container logs after calling this.
-    This endpoint was DISBLAED FOR SECURITY REASON.
-    """
-    if settings.APP_ENV == "local":
-        mock_authentication_enabled = True if settings.MOCK_AUTH_ENABLED else False
-        return {"msg": "Nothing"}
-    else:
-        return {"message": "Debug enpoint disabled for safety."}
 
 
 @app.get("/", tags=["Health Check"])

@@ -31,7 +31,6 @@ class Settings(BaseSettings):
 
     JWT_SECRET: str
     JWT_ALGO: str
-    MOCK_AUTH_ENABLED: bool
 
     NOTIFICATION_SERVICE_URL: HttpUrl
     HPC_USER_SERVICE_URL: HttpUrl
