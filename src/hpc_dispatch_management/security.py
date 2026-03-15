@@ -1,7 +1,7 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
 from .schemas import User, UserType
@@ -15,16 +15,18 @@ from .settings import settings
 # By that, we point tokenUrl directly to System-Management's login endpoint.
 # Ack, wait, i'm not changning SysMa code.
 # just get the jwt from curl and paste it when authorize
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="")
+bearer_scheme = HTTPBearer()
 
 
 async def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(bearer_scheme)],
 ) -> User:
     """
     Dependency to get the current user from a JWT token.
     Enforces the rule that ONLY Lecturers or Admins can access.
     """
+
+    token = credentials.credentials
 
     try:
         payload = jwt.decode(

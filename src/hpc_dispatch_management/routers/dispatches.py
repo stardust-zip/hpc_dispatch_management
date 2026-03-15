@@ -12,7 +12,7 @@ from .. import (
     schemas,
 )
 from ..database import get_db, get_http_client
-from ..security import get_current_user, oauth2_scheme
+from ..security import bearer_scheme, get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -154,7 +154,7 @@ async def assign_dispatch(
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
     # --- ADD THESE DEPENDENCIES ---
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(bearer_scheme),
     client: httpx.AsyncClient = Depends(get_http_client),
     # --------------------------------
 ):
