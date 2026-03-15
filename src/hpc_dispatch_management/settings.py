@@ -2,7 +2,11 @@ from pydantic import Field, HttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# By inherting BaseSettings, Pydantic knows that every atrtibute
+# defined inside this class should be populated by an environtment varibale
+# matching it's name.
 class Settings(BaseSettings):
+    # local or production
     APP_ENV: str
 
     LOG_LEVEL: str = Field(
@@ -35,8 +39,16 @@ class Settings(BaseSettings):
 
     # Pydantic v2 configuration
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # Ignore any extra env variable that wasn't defined in settings.py
     )
 
 
+# At this moment as Python instantiates the class,
+# Pydantic parses the .env file, reads the system env varibles,
+# vidates all data types, applies defaults, and sotre everything insde
+# settings object.
+# With this, other files can import and and safely use the varibles with
+# full autocomplete and type-safety, knwoing that validation has already passed
 settings = Settings()
