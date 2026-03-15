@@ -22,6 +22,9 @@ class Settings(BaseSettings):
         "https://hethongdientu.khoacongnghethongtinhpc.io.vn:3001",
     ]
 
+    METHODS: list[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    HEADERS: list[str] = ["Content-Type", "Authorization", "Accept"]
+
     JWT_SECRET: str
     JWT_ALGO: str
     MOCK_AUTH_ENABLED: bool

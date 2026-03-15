@@ -54,7 +54,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="HPC Dispatch Management Service",
-    description="Handles creation, tracking, and notification of official dispatches.",
+    description="Quản lý công văn cho Hệ thống điện tử HPC.",
     version="0.1.0",
     lifespan=lifespan,
 )
@@ -64,8 +64,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=settings.METHODS,
+    allow_headers=settings.HEADERS,
 )
 
 
@@ -78,6 +78,7 @@ async def debug_settings():
     """
     Temporary endpoint to verify environment variables are loaded.
     Check the container logs after calling this.
+    This endpoint was DISBLAED FOR SECURITY REASON.
     """
     if settings.APP_ENV == "local":
         mock_authentication_enabled = True if settings.MOCK_AUTH_ENABLED else False
