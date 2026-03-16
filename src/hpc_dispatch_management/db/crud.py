@@ -1,7 +1,8 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
-from . import models, schemas
+from .. import schemas
+from . import models
 
 # region User Cache Management
 

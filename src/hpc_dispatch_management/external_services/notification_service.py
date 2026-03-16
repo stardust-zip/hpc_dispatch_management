@@ -4,8 +4,9 @@ from datetime import datetime, timezone
 import httpx
 from pydantic import HttpUrl
 
-from . import models, schemas
-from .settings import settings
+from .. import schemas
+from ..core.settings import settings
+from ..db import models
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

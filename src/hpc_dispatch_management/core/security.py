@@ -4,17 +4,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security.http import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 
-from .schemas import User, UserType
+from ..schemas import User, UserType
 from .settings import settings
 
-# Tells FastAPI to look for an Authorization header in incoming HTTP requests,
-# specifically expecting the format Bearer <token>
-# Since I don't have /token endpoint becuase System-Management handles login
-# , the Authorize button in /docs Swagger UI will fail with a 404 error when
-# dev try to login
-# By that, we point tokenUrl directly to System-Management's login endpoint.
-# Ack, wait, i'm not changning SysMa code.
-# just get the jwt from curl and paste it when authorize
 bearer_scheme = HTTPBearer()
 
 

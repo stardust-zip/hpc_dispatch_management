@@ -5,14 +5,11 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .. import (
-    crud,
-    drive_service,
-    notification_service,
-    schemas,
-)
-from ..database import get_db, get_http_client
-from ..security import bearer_scheme, get_current_user
+from .. import schemas
+from ..core.security import bearer_scheme, get_current_user
+from ..db import crud
+from ..db.database import get_db, get_http_client
+from ..external_services import drive_service, notification_service
 
 logger = logging.getLogger(__name__)
 

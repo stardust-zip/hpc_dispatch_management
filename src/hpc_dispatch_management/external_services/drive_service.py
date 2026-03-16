@@ -3,9 +3,9 @@ import uuid
 
 import httpx
 
-from . import models
-from .schemas import DispatchStatus
-from .settings import settings
+from ..core.settings import settings
+from ..db import models
+from ..schemas import DispatchStatus
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

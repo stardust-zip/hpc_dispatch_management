@@ -5,9 +5,9 @@ import httpx
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .database import create_db_and_tables
+from .core.settings import settings
+from .db.database import create_db_and_tables
 from .routers import dispatches
-from .settings import settings
 
 # Initialize a logger instance for this specific file, naming it after the current module (__name__)
 logger = logging.getLogger(__name__)

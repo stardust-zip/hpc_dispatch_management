@@ -14,8 +14,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.sql.schema import UniqueConstraint
 
+from ..schemas import DispatchStatus, UserType
 from .database import Base
-from .schemas import DispatchStatus, UserType
 
 
 class User(Base):

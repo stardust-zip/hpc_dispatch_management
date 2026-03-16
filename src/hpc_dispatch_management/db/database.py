@@ -6,7 +6,7 @@ from fastapi import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from .settings import settings
+from ..core.settings import settings
 
 logger = logging.getLogger(__name__)
 
