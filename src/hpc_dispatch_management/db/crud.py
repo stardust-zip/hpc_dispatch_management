@@ -1,4 +1,8 @@
 from sqlalchemy import or_
+
+# joinedload tells SQLAlchemy to use an SQL LEFT OUTER JOIN or INNER JOIN
+# to fetch related tables in the exact same query, rather than making separate
+# subsequent queries.
 from sqlalchemy.orm import Session, joinedload
 
 from .. import schemas
@@ -9,17 +13,24 @@ from . import models
 
 def get_user(db: Session, user_id: int) -> models.User | None:
     """
-    FIX: Retrieves a single user from the local database cache by their ID.
-    This function was missing.
+    Retrieves a single user from the local database cache by their ID.
     """
     return db.query(models.User).filter(models.User.id == user_id).first()
+    # first() is more efficient than all() whens searching primary key
+    # because it stop evaluating the db curser once the match is found,
+    # though, the primary keys are unique anyway.
 
 
 def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
     """
-    Synchronizes user data from a trusted JWT into our local database.
+    Take a decoded JWT payload and ensures this user
+    exists and is up-to-date in the local database
     """
-    db_user = get_user(db, user_id=user_jwt_data.sub)  # Now uses the new function
+    db_user = get_user(db, user_id=user_jwt_data.sub)
+
+    # If the user already exists in the database, it
+    # overwrites all their mutable attributes with the
+    # fresh data from the JWT.
     if db_user:
         # User exists, update their cached info in case it changed
         db_user.username = user_jwt_data.username
@@ -28,6 +39,13 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
         db_user.user_type = schemas.UserType(user_jwt_data.user_type)
         db_user.department_id = user_jwt_data.department_id
         db_user.is_admin = user_jwt_data.is_admin
+        # Because user profile can change in System Service,
+        # and Dispatch Servce relies on JWT authentiation, the JWT
+        # acts as a vehicle carrying the absolute latest suer state.
+        # Overwriting these fields guaratees eventual consistency between
+        # microservices
+    # If user wasn't found, create new models.User instance using
+    # the JWT data and ads it to the session.
     else:
         # User does not exist in our local cache, create the record
         db_user = models.User(
@@ -42,6 +60,9 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
         db.add(db_user)
 
     db.commit()
+
+    # Refresh to isses a quick SELECT to fetch the
+    # most recent state of the row
     db.refresh(db_user)
     return db_user
 
@@ -52,17 +73,30 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
 
 
 def get_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
+    """
+    Fetches a single dispatch by its ID, along with the user who authored it
+    """
     return (
         db.query(models.Dispatch)
+        # joinedload modfies the query generation, instead of just querying
+        # disptaches table, SQLAlchemy create a query like
+        # SELECT * FROM dispatches LEFT OUTER JOIN users ON dispatches.author_id = users.id
+        # This help optimizing performance, without it, accessing dispatch.author later
+        # would trigger a lazy load, a new SQL query to the users table, doing it in a loop
+        # would results in N+1 query problem.
         .options(joinedload(models.Dispatch.author))
         .filter(models.Dispatch.id == dispatch_id)
         .first()
     )
 
 
+# TODO
 def get_dispatches(
     db: Session, skip: int = 0, limit: int = 100
 ) -> list[models.Dispatch]:
+    """
+    Retrieves a paginated list of dispatches.
+    """
     return (
         db.query(models.Dispatch)
         .options(joinedload(models.Dispatch.author))
@@ -75,7 +109,15 @@ def get_dispatches(
 def create_dispatch(
     db: Session, dispatch: schemas.DispatchCreate, author_id: int
 ) -> models.Dispatch:
+    """
+    Create a new dispatch for the database.
+    """
+    # Converts the validated Pydantic input schema into a standard Python dictionary
     dispatch_data = dispatch.model_dump()
+
+    # While Pydantic models often define URL as special HttpUrl type for strict
+    # type validation, SQLAlchemy expects a standard primitive string to store in
+    # a VARCHAR column, so we force the conversion back to a standard string.
     if dispatch_data.get("file_url"):
         dispatch_data["file_url"] = str(dispatch_data["file_url"])
 
@@ -91,6 +133,11 @@ def create_dispatch(
 def update_dispatch(
     db: Session, db_dispatch: models.Dispatch, dispatch_update: schemas.DispatchUpdate
 ) -> models.Dispatch:
+    """
+    Update dispatch based on provided fields.
+    """
+    # Extracted data from the update schema, ignoring
+    # fields the user didn't explicitly provide.
     update_data = dispatch_update.model_dump(exclude_unset=True)
     if update_data.get("file_url"):
         update_data["file_url"] = str(update_data["file_url"])
@@ -98,6 +145,8 @@ def update_dispatch(
     for key, value in update_data.items():
         setattr(db_dispatch, key, value)
 
+    # Though, the db_dispatch is already fethced from the db, we still use
+    # add() here. it's no-op, but good practice to signal intent.
     db.add(db_dispatch)
     db.commit()
     db.refresh(db_dispatch)
@@ -105,9 +154,13 @@ def update_dispatch(
 
 
 def delete_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
+    """
+    Remove a dispatch from the database
+    """
+
     db_dispatch = get_dispatch(db, dispatch_id)
     if db_dispatch:
-        db.delete(db_dispatch)
+        db.delete(db_dispatch)  # TODO: Set up soft delete is_delete=True instead.
         db.commit()
     return db_dispatch
 
@@ -120,6 +173,7 @@ def assign_dispatch_to_users(
     Returns the list of assignee user objects.
     """
     assignee_usernames = assignment_data.assignee_usernames
+    # If an API client accidentally sends ["jane", "jane"], it would create duplicate
     # Using set for efficiency and to handle duplicate usernames in input
     unique_assignee_usernames = set(assignee_usernames)
     assignees = (

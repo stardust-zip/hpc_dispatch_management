@@ -150,10 +150,8 @@ async def assign_dispatch(
     assignment: schemas.DispatchAssign,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
-    # --- ADD THESE DEPENDENCIES ---
     token: str = Depends(bearer_scheme),
     client: httpx.AsyncClient = Depends(get_http_client),
-    # --------------------------------
 ):
     """
     Assign a DRAFT dispatch to users.
@@ -174,17 +172,11 @@ async def assign_dispatch(
             status_code=400, detail="Only draft dispatches can be assigned"
         )
 
-    # ... (user sync logic removed for brevity, it's not needed here) ...
-
     try:
         assignees = crud.assign_dispatch_to_users(db, db_dispatch, assignment)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # --- ADD THIS CALL ---
-    # This will run in the background (fire and forget)
-    # It will move the sender's file to "Công văn đi"
-    # and share the file with all assignees.
     try:
         await drive_service.organize_dispatch_in_drive(
             dispatch=db_dispatch, assignees=assignees, token=token, client=client
@@ -192,7 +184,6 @@ async def assign_dispatch(
     except Exception as e:
         # Log the error but don't stop the dispatch from being sent
         logger.exception(f"Failed to organize dispatch in drive: {e}")
-    # ---------------------
 
     # Send notifications to all assignees
     for assignee in assignees:
