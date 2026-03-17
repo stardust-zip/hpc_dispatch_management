@@ -73,18 +73,13 @@ def sync_user_from_jwt(db: Session, user_jwt_data: schemas.User) -> models.User:
 
 
 def get_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
-    """
-    Fetches a single dispatch by its ID, along with the user who authored it
-    """
     return (
         db.query(models.Dispatch)
-        # joinedload modfies the query generation, instead of just querying
-        # disptaches table, SQLAlchemy create a query like
-        # SELECT * FROM dispatches LEFT OUTER JOIN users ON dispatches.author_id = users.id
-        # This help optimizing performance, without it, accessing dispatch.author later
-        # would trigger a lazy load, a new SQL query to the users table, doing it in a loop
-        # would results in N+1 query problem.
-        .options(joinedload(models.Dispatch.author))
+        .options(
+            joinedload(models.Dispatch.author),
+            # Add this line to load assignments
+            joinedload(models.Dispatch.assignments),
+        )
         .filter(models.Dispatch.id == dispatch_id)
         .first()
     )
@@ -223,7 +218,9 @@ def get_dispatches_with_filters(
     Retrieves dispatches with advanced filtering based on the user's perspective.
     """
     # Start with a base query and eager load author info to prevent N+1 queries
-    query = db.query(models.Dispatch).options(joinedload(models.Dispatch.author))
+    query = db.query(models.Dispatch).options(
+        joinedload(models.Dispatch.author), joinedload(models.Dispatch.assignments)
+    )
 
     # 1. Filter by User Perspective (INCOMING/OUTGOING)
     if dispatch_type == schemas.DispatchTypeSearch.INCOMING:

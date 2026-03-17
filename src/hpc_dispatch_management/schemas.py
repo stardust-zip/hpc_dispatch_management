@@ -125,6 +125,24 @@ class DispatchUpdate(BaseModel):
     status: DispatchStatus | None = None
 
 
+class DispatchAssignmentResponse(BaseModel):
+    id: int
+    assignee_id: int
+    action_required: str | None = None
+    review_comment: str | None = None
+    assigned_at: AwareDatetime
+
+    @field_validator("assigned_at", mode="before")
+    @classmethod
+    def ensure_timezone_aware(cls, v: datetime | None) -> datetime | None:
+        if isinstance(v, datetime) and v.tzinfo is None:
+            return v.replace(tzinfo=timezone.utc)
+        return v
+
+    class ConfigDict:
+        from_attributes = True
+
+
 class Dispatch(DispatchBase):
     id: int
     author_id: int
@@ -132,6 +150,8 @@ class Dispatch(DispatchBase):
     created_at: AwareDatetime
     updated_at: AwareDatetime | None = None
     author: UserInfo
+
+    assignments: list[DispatchAssignmentResponse] = Field(default_factory=list)
 
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
