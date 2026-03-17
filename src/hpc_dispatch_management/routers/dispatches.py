@@ -3,6 +3,7 @@ from typing import Annotated
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security.http import HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from .. import schemas
@@ -118,16 +119,17 @@ async def delete_dispatch(
     dispatch_id: int,
     db: Session = Depends(get_db),
     current_user: schemas.User = Depends(get_current_user),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    client: httpx.AsyncClient = Depends(get_http_client),
 ):
     """
-    Delete a dispatch.
+    Delete a dispatch and move its associated file to the trash in Drive.
     - Business Rule: If in DRAFT, only the creator can delete.
     - Business Rule: If sent (not DRAFT), only an admin can delete.
     """
     db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
     if db_dispatch is None:
         # We don't raise 404 on delete to prevent leaking information
-        # Simply return success. This is an idempotent operation.
         return
 
     # Check permissions based on dispatch status
@@ -140,7 +142,24 @@ async def delete_dispatch(
             detail="You do not have permission to delete this dispatch.",
         )
 
+    # 1. Capture the file URL before deleting the DB record
+    file_url = db_dispatch.file_url
+
+    # 2. Delete the dispatch from the SQL database
     _ = crud.delete_dispatch(db=db, dispatch_id=dispatch_id)
+
+    # 3. Clean up the physical file in the user's Drive
+    if file_url:
+        try:
+            # We must use credentials.credentials to get the raw token string
+            await drive_service.trash_dispatch_file(
+                file_url=file_url, token=credentials.credentials, client=client
+            )
+        except Exception as e:
+            logger.exception(
+                f"Failed to move file to trash for dispatch {dispatch_id}: {e}"
+            )
+
     return
 
 

@@ -171,3 +171,31 @@ async def organize_dispatch_in_drive(
                 continue  # Don't share with yourself
 
             await _share_item_with_user(item_id, assignee.username, token, client)
+
+
+async def trash_dispatch_file(
+    file_url: str | None, token: str, client: httpx.AsyncClient
+):
+    """Moves a drive item to the trash."""
+    item_id = _extract_item_id_from_url(file_url)
+    if not item_id:
+        # No valid file attached, nothing to trash
+        return
+
+    headers = _get_auth_header(token)
+    drive_url = settings.HPC_DRIVE_SERVICE_URL
+
+    try:
+        response = await client.patch(
+            f"{drive_url}/items/{item_id}/trash", headers=headers
+        )
+        response.raise_for_status()
+        logger.info(f"Successfully moved item {item_id} to trash.")
+    except httpx.HTTPStatusError as e:
+        # Ignore 404 Not Found if the file was already deleted from the drive
+        if e.response.status_code != 404:
+            logger.error(
+                f"HTTP error moving item {item_id} to trash: {e.response.text}"
+            )
+    except Exception as e:
+        logger.error(f"Error in trash_dispatch_file: {e}")
