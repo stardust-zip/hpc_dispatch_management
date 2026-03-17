@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from hpc_dispatch_management.database import SessionLocal
-from hpc_dispatch_management.models import Dispatch, DispatchStatus, User
+from .database import SessionLocal
+from .models import Dispatch, DispatchStatus, User
 
 
 def run_seeder():

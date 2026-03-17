@@ -228,23 +228,35 @@ async def update_dispatch_status(
     """
     Update the status of a dispatch (Approve/Reject).
     - Only an assignee can perform this action.
+    - Saves the review comment.
     - Sends a notification back to the original author.
     """
     db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
     if not db_dispatch:
         raise HTTPException(status_code=404, detail="Dispatch not found")
 
-    # Verify if the current user is an assignee of this dispatch
-    is_assignee = any(
-        assign.assignee_id == current_user.sub for assign in db_dispatch.assignments
+    # 1. Verify if the current user is an assignee and get their assignment record
+    user_assignment = next(
+        (
+            assign
+            for assign in db_dispatch.assignments
+            if assign.assignee_id == current_user.sub
+        ),
+        None,
     )
-    if not is_assignee:
+
+    if not user_assignment:
         raise HTTPException(
             status_code=403, detail="You are not an assignee of this dispatch"
         )
 
-    # Update the dispatch status
+    # 2. Update the dispatch status
     db_dispatch.status = status_update.status
+
+    # 3. Save the review comment to the user's assignment record
+    if status_update.review_comment is not None:
+        user_assignment.review_comment = status_update.review_comment
+
     db.commit()
     db.refresh(db_dispatch)
 
@@ -258,7 +270,7 @@ async def update_dispatch_status(
     # Send notification back to the author
     await notification_service.send_status_update_notification(
         dispatch=db_dispatch,
-        reviewer=reviewer,  # Pass the validated reviewer
+        reviewer=reviewer,
         status=status_update.status,
         comment=status_update.review_comment,
     )

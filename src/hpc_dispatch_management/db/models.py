@@ -102,6 +102,9 @@ class DispatchAssignment(Base):
 
     # Optional: Add info about the assignment itself
     action_required: Mapped[str | None] = mapped_column(Text)
+
+    review_comment: Mapped[str | None] = mapped_column(Text)
+
     assigned_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
