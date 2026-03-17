@@ -3,7 +3,7 @@ from sqlalchemy import or_
 # joinedload tells SQLAlchemy to use an SQL LEFT OUTER JOIN or INNER JOIN
 # to fetch related tables in the exact same query, rather than making separate
 # subsequent queries.
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from .. import schemas
 from . import models
@@ -77,8 +77,9 @@ def get_dispatch(db: Session, dispatch_id: int) -> models.Dispatch | None:
         db.query(models.Dispatch)
         .options(
             joinedload(models.Dispatch.author),
-            # Add this line to load assignments
-            joinedload(models.Dispatch.assignments),
+            selectinload(models.Dispatch.assignments).joinedload(
+                models.DispatchAssignment.assignee
+            ),
         )
         .filter(models.Dispatch.id == dispatch_id)
         .first()
@@ -219,7 +220,10 @@ def get_dispatches_with_filters(
     """
     # Start with a base query and eager load author info to prevent N+1 queries
     query = db.query(models.Dispatch).options(
-        joinedload(models.Dispatch.author), joinedload(models.Dispatch.assignments)
+        joinedload(models.Dispatch.author),
+        selectinload(models.Dispatch.assignments).joinedload(
+            models.DispatchAssignment.assignee
+        ),
     )
 
     # 1. Filter by User Perspective (INCOMING/OUTGOING)

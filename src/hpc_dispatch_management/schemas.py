@@ -132,6 +132,8 @@ class DispatchAssignmentResponse(BaseModel):
     review_comment: str | None = None
     assigned_at: AwareDatetime
 
+    assignee: UserInfo
+
     @field_validator("assigned_at", mode="before")
     @classmethod
     def ensure_timezone_aware(cls, v: datetime | None) -> datetime | None:
