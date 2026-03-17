@@ -100,6 +100,7 @@
               python-multipart # Streaming multipart parser for Python
               jwt # Super fast CLI tool to decode and encode JWTs
               pyjwt # JSON Web Token implementation in Python
+              redis # Python client for Redis key-value store
 
               # Add whatever else you'd like here.
               pkgs.basedpyright
