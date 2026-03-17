@@ -1,3 +1,6 @@
+from sqlite3 import IntegrityError
+
+from fastapi import HTTPException, status
 from sqlalchemy import or_
 
 # joinedload tells SQLAlchemy to use an SQL LEFT OUTER JOIN or INNER JOIN
@@ -121,9 +124,18 @@ def create_dispatch(
         **dispatch_data, author_id=author_id, status=schemas.DispatchStatus.DRAFT
     )
     db.add(db_dispatch)
-    db.commit()
-    db.refresh(db_dispatch)
-    return db_dispatch
+
+    try:
+        db.commit()
+        db.refresh(db_dispatch)
+        return db_dispatch
+    except IntegrityError:
+        db.rollback()  # Rollback the failed transaction
+        # Raise a 400 error with a clean, Vietnamese message
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Số hiệu công văn này đã tồn tại. Vui lòng nhập một số hiệu khác.",
+        )
 
 
 def update_dispatch(

@@ -45,3 +45,51 @@ async def get_lecturer(lecturer_id: int, token: str, client: httpx.AsyncClient) 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error while communicating with User Service",
         )
+
+
+async def fetch_lecturer_by_username(
+    username: str, token: str, client: httpx.AsyncClient
+) -> dict | None:
+    """
+    Fetches a missing lecturer from the System Management Service by username.
+    Handles multiple possible JSON structures based on the Laravel database schema.
+    """
+    base_url = str(settings.HPC_USER_SERVICE_URL).rstrip("/")
+    url = f"{base_url}/lecturers"
+    headers = _get_auth_header(token)
+
+    try:
+        response = await client.get(url, headers=headers)
+        response.raise_for_status()
+        data = response.json()
+
+        # Laravel typically wraps list responses in a "data" pagination object
+        lecturers = data.get("data", data) if isinstance(data, dict) else data
+
+        for lecturer in lecturers:
+            # Check multiple possible keys based on your DB schema (username, lecturer_code, or nested account)
+            api_username = (
+                lecturer.get("username")
+                or lecturer.get("lecturer_code")
+                or (
+                    lecturer.get("account", {}).get("username")
+                    if isinstance(lecturer.get("account"), dict)
+                    else None
+                )
+            )
+
+            if api_username == username:
+                # Force the "username" key into the dictionary so the router file can access it cleanly
+                lecturer["username"] = api_username
+                return lecturer
+
+        # If still failing, log the first item to the terminal so you can inspect the exact JSON structure
+        if lecturers:
+            logger.warning(
+                f"Could not find {username}. Sample lecturer JSON from API: {lecturers[0]}"
+            )
+
+        return None
+    except Exception as e:
+        logger.error(f"Failed to fetch lecturer {username} from User Service: {e}")
+        return None

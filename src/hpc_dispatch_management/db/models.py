@@ -62,7 +62,7 @@ class Dispatch(Base):
 
     status: Mapped[DispatchStatus] = mapped_column(
         SAEnum(DispatchStatus, native_enum=False, length=50),
-        default=DispatchStatus.PENDING,
+        default=DispatchStatus.DRAFT,
     )
 
     created_at: Mapped[datetime] = mapped_column(

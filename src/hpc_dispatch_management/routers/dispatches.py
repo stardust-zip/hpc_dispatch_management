@@ -8,9 +8,9 @@ from sqlalchemy.orm import Session
 
 from .. import schemas
 from ..core.security import bearer_scheme, get_current_user
-from ..db import crud
+from ..db import crud, models
 from ..db.database import get_db, get_http_client
-from ..external_services import drive_service, notification_service
+from ..external_services import drive_service, notification_service, user_service
 
 logger = logging.getLogger(__name__)
 
@@ -174,10 +174,6 @@ async def assign_dispatch(
 ):
     """
     Assign a DRAFT dispatch to users.
-    - Only the author can assign a dispatch.
-    - This changes the status from DRAFT to PENDING.
-    - This sends a notification to each assignee.
-    - This organizes the file in the author's drive and shares it.
     """
     db_dispatch = crud.get_dispatch(db, dispatch_id=dispatch_id)
     if not db_dispatch:
@@ -191,6 +187,47 @@ async def assign_dispatch(
             status_code=400, detail="Only draft dispatches can be assigned"
         )
 
+    unique_usernames = set(assignment.assignee_usernames)
+
+    # 1. Check which users already exist in the local database
+    existing_users = (
+        db.query(models.User).filter(models.User.username.in_(unique_usernames)).all()
+    )
+    existing_usernames = {u.username for u in existing_users}
+
+    # 2. Identify who is missing
+    missing_usernames = unique_usernames - existing_usernames
+
+    # 3. Fetch and save missing lecturers from the System Management service
+    if missing_usernames:
+        for username in missing_usernames:
+            lecturer_data = await user_service.fetch_lecturer_by_username(
+                username, token.credentials, client
+            )
+
+            if not lecturer_data:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"User '{username}' is invalid or does not exist in the system.",
+                )
+
+            # Cache the new user locally
+            new_user = models.User(
+                id=lecturer_data["id"],
+                username=lecturer_data["username"],
+                email=lecturer_data["email"],
+                full_name=lecturer_data.get(
+                    "full_name", lecturer_data.get("name", username)
+                ),
+                user_type=schemas.UserType.LECTURER,
+                department_id=lecturer_data.get("department_id"),
+                is_admin=lecturer_data.get("is_admin", False),
+            )
+            db.add(new_user)
+
+        db.commit()  # Save all newly fetched users to the DB
+
+    # Now the original CRUD function will succeed because all users are guaranteed to be in the local DB
     try:
         assignees = crud.assign_dispatch_to_users(db, db_dispatch, assignment)
     except ValueError as e:
@@ -198,13 +235,14 @@ async def assign_dispatch(
 
     try:
         await drive_service.organize_dispatch_in_drive(
-            dispatch=db_dispatch, assignees=assignees, token=token, client=client
+            dispatch=db_dispatch,
+            assignees=assignees,
+            token=token.credentials,
+            client=client,
         )
     except Exception as e:
-        # Log the error but don't stop the dispatch from being sent
         logger.exception(f"Failed to organize dispatch in drive: {e}")
 
-    # Send notifications to all assignees
     for assignee in assignees:
         await notification_service.send_new_dispatch_notification(
             dispatch=db_dispatch,
